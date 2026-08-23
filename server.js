@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const morgan = require('morgan');
 
-const PORT = process.env.PORT ? process.env.PORT : "3000";
+const PORT = process.env.PORT || 3000;
 
 const authCtrl = require("./controllers/auth-controller");
 const userCtrl = require("./controllers/users-controller");
@@ -20,9 +20,6 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 // ROUTES GO HERE
-// app.get("/auth/sign-token", authCtrl.signToken);
-// app.get("/auth/verify-token", authCtrl.verifyToken);
-app.post("/auth/sign-up", authCtrl.signUp);
 app.post("/auth/sign-in", authCtrl.signIn);
 app.get("/users", verifyToken, userCtrl.index);
 
