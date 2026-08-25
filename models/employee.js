@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-import isValidIban from "../utils/validateIban";
+const isValidIban = require("../utils/validateIban");
 
 const employeeSchema = new mongoose.Schema({
     employeeCode: {

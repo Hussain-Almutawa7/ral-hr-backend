@@ -10,18 +10,33 @@ const morgan = require('morgan');
 
 const PORT = process.env.PORT || 3000;
 
+// CONTROLLERS
 const authCtrl = require("./controllers/auth-controller");
 const userCtrl = require("./controllers/users-controller");
 
+// MIDDLEWARES
 const verifyToken = require("./middleware/verify-token");
+const requireRole = require("./middleware/require-role");
 
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
-// ROUTES GO HERE
-app.post("/auth/sign-in", authCtrl.signIn);
-app.get("/users", verifyToken, userCtrl.index);
+// AUTH ROUTES
+app.post("/api/auth/sign-in", authCtrl.signIn);
+app.get("/api/users", verifyToken, userCtrl.index);
+
+// PEOPLE & SETTINGS ROUTES
+
+// LEAVE ROUTES
+
+// ATTENDANCE ROUTES
+
+// DOCUMENTS ROUTES
+
+// PAYROLL ROUTES
+
+// SYSTEM ROUTES
 
 const startServer = async () => {
     try {

@@ -24,4 +24,4 @@ const isValidIban = (iban) => {
   return remainder === 1;
 };
 
-export default isValidIban
+module.exports = isValidIban;

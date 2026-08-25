@@ -223,12 +223,12 @@ const statutorySettingsSchema = new mongoose.Schema({
             required: true,
         },
 
-        salaryCapBhd: {
+        salaryCapFils: {
             type: Number,
             default: null,
         },
 
-        socialAllowanceBhd: {
+        socialAllowanceFils: {
             type: Number,
             required: true,
         },
