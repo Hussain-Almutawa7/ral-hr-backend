@@ -60,6 +60,9 @@ app.get("/api/users", verifyToken, userCtrl.index);
 
 // PEOPLE & SETTINGS ROUTES
 app.get("/api/departments", verifyToken, deptCtrl.index);
+app.post("/api/departments", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.create);
+
+
 // LEAVE ROUTES
 
 // ATTENDANCE ROUTES

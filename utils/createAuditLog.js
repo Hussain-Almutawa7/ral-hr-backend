@@ -1,7 +1,7 @@
 const AuditLog = require("../models/auditLog")
 
 const formatValue = value => {
-    if (value === null || value === undefined) return "";
+    if (value === null || value === undefined) return "null";
 
     if (typeof value === "object") return JSON.stringify(value);
 
