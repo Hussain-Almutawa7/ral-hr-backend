@@ -15,7 +15,7 @@ const authCtrl = require("./controllers/auth-controller");
 const userCtrl = require("./controllers/users-controller");
 
 // PEOPLE & SETTINGS CONTROLLERS
-
+const deptCtrl = require("./controllers/departments-controller");
 
 // LEAVE CONTROLLERS
 
@@ -59,7 +59,7 @@ app.post("/api/auth/sign-in", authCtrl.signIn);
 app.get("/api/users", verifyToken, userCtrl.index);
 
 // PEOPLE & SETTINGS ROUTES
-
+app.get("/api/departments", verifyToken, deptCtrl.index);
 // LEAVE ROUTES
 
 // ATTENDANCE ROUTES
