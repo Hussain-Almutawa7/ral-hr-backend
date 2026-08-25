@@ -14,9 +14,41 @@ const PORT = process.env.PORT || 3000;
 const authCtrl = require("./controllers/auth-controller");
 const userCtrl = require("./controllers/users-controller");
 
+// PEOPLE & SETTINGS CONTROLLERS
+
+
+// LEAVE CONTROLLERS
+
+
+// ATTENDANCE CONTROLLRES
+
+
+// DOCUMENTS CONTROLLERS
+
+
+// PAYROLL CONTROLLERS
+
+
+// SYSTEM CONTROLLERS
+
+
 // MIDDLEWARES
 const verifyToken = require("./middleware/verify-token");
 const requireRole = require("./middleware/require-role");
+
+// PEOPLE & SETTINGS MIDDLEWARES
+
+
+// LEAVE MIDDLEWARES
+
+
+// ATTENDANCE MIDDLEWARES
+
+
+// DOCUMENTS MIDDLEWARES
+
+
+// PAYROLL MIDDLEWARES
 
 app.use(cors());
 app.use(express.json());
