@@ -2,60 +2,34 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 
-const signUp = async (req, res) => {
-    try {
-
-        const userInDatabase = await User.findOne({
-            username: req.body.username,
-        });
-
-        if (userInDatabase) return res.status(409).json({ err: "Username already taken." });
-
-        const password = req.body.password;
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const userData = {
-            username: req.body.username,
-            password: hashedPassword,
-        }
-
-        const userCreated = await User.create(userData);
-
-        // Create the payload
-        const payload = { username: userCreated.username, _id: userCreated._id };
-
-        // Create the token with payload + secret
-        const token = jwt.sign({ payload }, process.env.JWT_SECRET);
-
-        res.status(201).json({ token });
-
-    } catch (e) {
-        res.status(400).json({ err: err.message });
-    }
-}
-
 const signIn = async (req, res) => {
     try {
         const userInDatabase = await User.findOne({
-            username: req.body.username
+            email: req.body.email
         });
 
         if (!userInDatabase) return res.status(404).json({ err: "User does not exist" });
+        if (!userInDatabase.isActive) return res.status(403).json({ err: "This Account has been deactivated" });
 
         const password = req.body.password;
         const comparePassword = userInDatabase.password;
 
         const isValidPassword = await bcrypt.compare(password, comparePassword);
 
-        if (!isValidPassword) res.status(401).json({ err: "Login Failed. Please try again." });
+        if (!isValidPassword) return res.status(401).json({ err: "Login Failed. Please try again." });
 
         // payload
-        const payload = { username: userInDatabase.username, _id: userInDatabase._id };
+        const payload = {
+            _id: userInDatabase._id,
+            email: userInDatabase.email,
+            role: userInDatabase.role,
+            employee: userInDatabase.employee,
+        };
 
         // token
         const token = jwt.sign({ payload }, process.env.JWT_SECRET);
 
-        res.json({ token })
+        res.status(200).json({ token })
 
     } catch (e) {
         res.status(500).json({ err: e.message });

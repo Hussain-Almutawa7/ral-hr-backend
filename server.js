@@ -1,7 +1,7 @@
 const dns = require("node:dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
-const dotenv = require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 const authCtrl = require("./controllers/auth-controller");
 const userCtrl = require("./controllers/users-controller");
 
-const verifyToken = require("./middleware/verify-toke");
+const verifyToken = require("./middleware/verify-token");
 
 app.use(cors());
 app.use(express.json());
