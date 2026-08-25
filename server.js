@@ -18,6 +18,7 @@ const userCtrl = require("./controllers/users-controller");
 
 
 // LEAVE CONTROLLERS
+const leaveRequestsCtrl = require("./controllers/leave-requests-controller")
 
 
 // ATTENDANCE CONTROLLRES
@@ -61,6 +62,7 @@ app.get("/api/users", verifyToken, userCtrl.index);
 // PEOPLE & SETTINGS ROUTES
 
 // LEAVE ROUTES
+app.post("/api/leave-requests", verifyToken, leaveRequestsCtrl.create)
 
 // ATTENDANCE ROUTES
 
