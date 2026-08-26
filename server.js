@@ -16,6 +16,7 @@ const userCtrl = require("./controllers/users-controller");
 
 // PEOPLE & SETTINGS CONTROLLERS
 const deptCtrl = require("./controllers/departments-controller");
+const designationCtrl = require("./controllers/designations-controller");
 
 // LEAVE CONTROLLERS
 
@@ -63,6 +64,10 @@ app.get("/api/departments", verifyToken, deptCtrl.index);
 app.post("/api/departments", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.create);
 app.patch("/api/departments/:departmentId", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.update);
 app.patch("/api/departments/:departmentId/status", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.updateStatus);
+
+app.get("/api/designations", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.index);
+app.post("/api/designations", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.create);
+app.patch("/api/designations/:designationId", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.update);
 
 // LEAVE ROUTES
 

@@ -2,7 +2,6 @@ const Department = require("../models/department");
 const Company = require("../models/company");
 const createAuditLog = require("../utils/createAuditLog");
 const escapeRegex = require("../utils/escapeRegex");
-const { findByIdAndUpdate } = require("../models/user");
 
 const index = async (req, res) => {
     try {
