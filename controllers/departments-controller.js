@@ -94,7 +94,7 @@ const update = async (req, res) => {
         if (hasNameEn && req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name cannot be empty." });
 
         const newNameEn = hasNameEn ? req.body.nameEn.trim() : currentDept.nameEn;
-        const newNameAr = hasNameAr ? req.body.nameAr.trim() || null : currentDept.nameAr;
+        const newNameAr = hasNameAr ? req.body.nameAr ? req.body.nameAr.trim() : null : currentDept.nameAr;
 
         const namedConditions = [
             {

@@ -68,6 +68,7 @@ app.patch("/api/departments/:departmentId/status", verifyToken, requireRole("HR 
 app.get("/api/designations", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.index);
 app.post("/api/designations", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.create);
 app.patch("/api/designations/:designationId", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.update);
+app.patch("/api/designations/:designationId/status", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.updateStatus);
 
 // LEAVE ROUTES
 
