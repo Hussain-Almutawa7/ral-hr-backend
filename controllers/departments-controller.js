@@ -86,9 +86,7 @@ const create = async (req, res) => {
 
 const update = async (req, res) => {
     try {
-        const currentDept = await Department.findById(
-            req.params.departmentId
-        );
+        const currentDept = await Department.findById(req.params.departmentId);
 
         if (!currentDept) return res.status(404).json({ err: "Department not found." });
 
@@ -159,13 +157,45 @@ const update = async (req, res) => {
     }
 };
 
-const deactivate = async (req, res) => {
+const updateStatus = async (req, res) => {
+    try {
+        const currentDept = await Department.findById(req.params.departmentId);
 
+        if (!currentDept) return res.status(404).json({ err: "Department not found." });
+
+        const isActive = req.body.isActive;
+
+        if (typeof isActive !== "boolean") return res.status(400).json({ err: "isActive must be a boolean" });
+
+        if (isActive === currentDept.isActive) return res.status(200).json(currentDept);
+
+        const changes = [{
+            fieldName: "isActive",
+            oldValue: currentDept.isActive,
+            newValue: isActive,
+        }]
+
+        currentDept.isActive = isActive;
+        await currentDept.save();
+
+        await createAuditLog({
+            tableName: "Department",
+            recordId: currentDept._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(currentDept);
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
 }
 
 module.exports = {
     index,
     create,
     update,
-    deactivate,
+    updateStatus,
 }
