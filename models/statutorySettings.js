@@ -1,36 +1,5 @@
 const mongoose = require("mongoose");
 
-const documentTypeSchema = new mongoose.Schema({
-    code: {
-        type: String,
-        required: true,
-        trim: true,
-        lowercase: true,
-    },
-
-    nameEn: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-
-    nameAr: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-
-    hasExpiry: {
-        type: Boolean,
-        required: true,
-    },
-
-    isActive: {
-        type: Boolean,
-        required: true,
-    },
-}, { _id: false });
-
 const statutorySettingsSchema = new mongoose.Schema({
     company: {
         type: mongoose.Schema.Types.ObjectId,
@@ -531,11 +500,6 @@ const statutorySettingsSchema = new mongoose.Schema({
 
         employeeMayUpload: {
             type: Boolean,
-            required: true,
-        },
-
-        documentTypes: {
-            type: [documentTypeSchema],
             required: true,
         },
     },
