@@ -15,7 +15,7 @@ const authCtrl = require("./controllers/auth-controller");
 const userCtrl = require("./controllers/users-controller");
 
 // PEOPLE & SETTINGS CONTROLLERS
-
+const deptCtrl = require("./controllers/departments-controller");
 
 // LEAVE CONTROLLERS
 const leaveRequestsCtrl = require("./controllers/leave-requests-controller")
@@ -60,6 +60,10 @@ app.post("/api/auth/sign-in", authCtrl.signIn);
 app.get("/api/users", verifyToken, userCtrl.index);
 
 // PEOPLE & SETTINGS ROUTES
+app.get("/api/departments", verifyToken, deptCtrl.index);
+app.post("/api/departments", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.create);
+app.patch("/api/departments/:departmentId", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.update);
+app.patch("/api/departments/:departmentId/status", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.updateStatus);
 
 // LEAVE ROUTES
 app.post("/api/leave-requests", verifyToken, leaveRequestsCtrl.create)

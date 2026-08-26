@@ -18,13 +18,11 @@ const salaryStructureLineSchema = new mongoose.Schema({
     },
 }, { _id: false });
 
-salaryStructureLineSchema.pre("validate", function (next) {
-    const hasAmount = this.amountFils !== null;
-    const hasPercent = this.percent !== null;
+salaryStructureLineSchema.pre("validate", function () {
+    const hasAmount = this.amountFils !== null && this.amountFils !== undefined;
+    const hasPercent = this.percent !== null && this.percent !== undefined;
 
-    if (hasAmount === hasPercent) return next(new Error("A salary structure line must have either an amount or a percent."));
-
-    next();
+    if (hasAmount === hasPercent) throw new Error("A salary structure line must have either an amount or a percent.");
 });
 
 const salaryStructureSchema = new mongoose.Schema({
