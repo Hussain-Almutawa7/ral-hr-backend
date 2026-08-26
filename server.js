@@ -19,6 +19,7 @@ const deptCtrl = require("./controllers/departments-controller");
 const designationCtrl = require("./controllers/designations-controller");
 const companyCtrl = require("./controllers/company-controller");
 const bankCtrl = require("./controllers/bank-controller");
+const settingsCtrl = require("./controllers/settings-controller");
 
 // LEAVE CONTROLLERS
 
@@ -79,6 +80,9 @@ app.get("/api/banks", verifyToken, requireRole("HR Officer", "HR Manager"), bank
 app.post("/api/banks", verifyToken, requireRole("HR Manager"), bankCtrl.create);
 app.patch("/api/banks/:bankId", verifyToken, requireRole("HR Manager"), bankCtrl.update);
 app.patch("/api/banks/:bankId/status", verifyToken, requireRole("HR Manager"), bankCtrl.updateStatus);
+
+app.get("/api/settings", verifyToken, requireRole("HR Officer", "HR Manager"), settingsCtrl.show);
+app.patch("/api/settings", verifyToken, requireRole("HR Manager"), settingsCtrl.update);
 
 // LEAVE ROUTES
 
