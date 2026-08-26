@@ -75,8 +75,10 @@ app.patch("/api/designations/:designationId/status", verifyToken, requireRole("H
 app.get("/api/company", verifyToken, requireRole("HR Officer", "HR Manager"), companyCtrl.show);
 app.patch("/api/company", verifyToken, requireRole("HR Manager"), companyCtrl.update);
 
-app.get("/api/banks", verifyToken, requireRole("HR Officer" , "HR Manager"), bankCtrl.index);
+app.get("/api/banks", verifyToken, requireRole("HR Officer", "HR Manager"), bankCtrl.index);
 app.post("/api/banks", verifyToken, requireRole("HR Manager"), bankCtrl.create);
+app.patch("/api/banks/:bankId", verifyToken, requireRole("HR Manager"), bankCtrl.update);
+app.patch("/api/banks/:bankId/status", verifyToken, requireRole("HR Manager"), bankCtrl.updateStatus);
 
 // LEAVE ROUTES
 
