@@ -6,9 +6,7 @@ const { findByIdAndUpdate } = require("../models/user");
 
 const index = async (req, res) => {
     try {
-        const departments = await Department.find({
-            isActive: true,
-        });
+        const departments = await Department.find();
 
         res.status(200).json(departments);
     } catch (e) {
