@@ -126,13 +126,40 @@ const create = async (req, res) => {
 
         res.status(201).json(createdRequests)
 
-
-
     } catch (e) {
         res.status(400).json({ err: e.message })
     }
 }
 
+const HR_ROLES = ["HR Officer", "HR Manager"]
+
+const index = async (req, res) => {
+    try {
+        const { role, employee } = req.user
+
+        let leaveRequests
+
+        if (HR_ROLES.includes(role)) {
+            leaveRequests = await LeaveRequest.find()
+
+        } else if (role === "Manager") {
+            leaveRequests = await LeaveRequest.find({ approver: employee })
+
+        } else if (role === "Employee") {
+            leaveRequests = await LeaveRequest.find({ employee: employee })
+
+        } else {
+            return res.status(403).json({ err: "Not authorized to view leave requests" })
+        }
+
+        res.status(200).json(leaveRequests)
+
+    } catch (e) {
+        res.status(500).json({ err: e.message })
+    }
+}
+
 module.exports = {
     create,
+    index,
 }

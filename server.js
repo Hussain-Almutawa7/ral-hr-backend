@@ -63,6 +63,7 @@ app.get("/api/users", verifyToken, userCtrl.index);
 
 // LEAVE ROUTES
 app.post("/api/leave-requests", verifyToken, leaveRequestsCtrl.create)
+app.get("/api/leave-requests", verifyToken, leaveRequestsCtrl.index)
 
 // ATTENDANCE ROUTES
 
