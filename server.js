@@ -61,7 +61,8 @@ app.get("/api/users", verifyToken, userCtrl.index);
 // PEOPLE & SETTINGS ROUTES
 app.get("/api/departments", verifyToken, deptCtrl.index);
 app.post("/api/departments", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.create);
-
+app.patch("/api/departments/:departmentId", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.update);
+app.patch("/api/departments/:departmentId/status", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.deactivate);
 
 // LEAVE ROUTES
 
