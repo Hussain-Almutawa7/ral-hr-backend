@@ -23,8 +23,9 @@ const settingsCtrl = require("./controllers/settings-controller");
 const employeeCtrl = require("./controllers/employee-controller");
 
 // LEAVE CONTROLLERS
-const leaveRequestsCtrl = require("./controllers/leave-requests-controller")
-const leaveTypeCtrl = require("./controllers/leave-type-controller")
+// const leaveRequestsCtrl = require("./controllers/leave-requests-controller")
+// const leaveTypeCtrl = require("./controllers/leave-type-controller")
+const leaveCtrl = require("./controllers/leave-controller")
 
 // ATTENDANCE CONTROLLRES
 
@@ -95,12 +96,15 @@ app.patch("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "
 app.patch("/api/employees/:employeeId/status", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.updateStatus)
 
 // LEAVE ROUTES
-app.get("/api/leave/types", verifyToken, leaveTypeCtrl.index)
-app.post("/api/leave/types", verifyToken, requireRole("HR Manager"), leaveTypeCtrl.create)
-app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Manager"), leaveTypeCtrl.update)
+app.get("/api/leave/types", verifyToken, leaveCtrl.indexType)
+app.post("/api/leave/types", verifyToken, requireRole("HR Manager"), leaveCtrl.createType)
+app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Manager"), leaveCtrl.updateType)
 
-app.post("/api/leave/requests", verifyToken, leaveRequestsCtrl.create)
-app.get("/api/leave/requests", verifyToken, leaveRequestsCtrl.index)
+app.get("/api/leave/allocations", verifyToken, leaveCtrl.indexAllocations)
+app.post("/api/leave/allocations", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createAllocation)
+
+app.post("/api/leave/requests", verifyToken, leaveCtrl.createRequest)
+app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 // app.get("/api/leave/requests/:leaveRequestId", verifyToken, leaveRequestsCtrl.show)
 
 // ATTENDANCE ROUTES

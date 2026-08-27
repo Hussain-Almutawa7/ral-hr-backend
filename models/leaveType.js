@@ -53,6 +53,10 @@ const leaveTypeSchema = new mongoose.Schema({
         type: Boolean,
         default: null,
     },
+    maxLifeTimeUses: {
+        type: Number,
+        default: null,
+    },
     includesHolidays: {
         type: Boolean,
         default: null,
