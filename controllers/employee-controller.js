@@ -425,6 +425,79 @@ const updateMyContact = async (req, res) => {
     }
 }
 
+const updateStatus = async (req, res) => {
+    try {
+        const foundEmployee = await Employee.findById(req.params.employeeId);
+
+        if (!foundEmployee) return res.status(404).json({ err: "Employee not found." });
+
+        const allowedStatuses = [
+            "Active",
+            "On Leave",
+            "Suspended",
+            "Lef",
+        ]
+
+        if (!req.body.status || !allowedStatuses.includes(req.body.status)) return res.status(400).json({ err: "Invalid employee status" });
+        if (req.body.status === "Left" && !req.body.dateOfLeaving) return res.status(400).json({ err: "Date of leaving is required when employee status is Left." });
+
+        const changes = [];
+
+        const oldStatus = foundEmployee.status;
+        foundEmployee.status = req.body.status;
+
+        if (foundEmployee.isModified("status")) {
+            changes.push({
+                fieldName: "status",
+                oldValue: oldStatus,
+                newValue: foundEmployee.status,
+            });
+        }
+
+        if (req.body.status === "Left") {
+            const oldDateIfLeaving = foundEmployee.dateOfLeaving;
+            foundEmployee.dateOfLeaving = req.body.dateOfLeaving;
+
+            if (foundEmployee.isModified("dateOfLeaving")) {
+                changes.push({
+                    fieldName: "dateOfLeaving",
+                    oldValue: oldDateIfLeaving,
+                    newValue: foundEmployee.dateOfLeaving,
+                });
+            }
+        } else if (foundEmployee.dateOfLeaving !== null) {
+            const oldDateOfLeaving = foundEmployee.dateOfLeaving;
+
+            foundEmployee.dateOfLeaving = null;
+
+            changes.push({
+                fieldName: "dateOfLeaving",
+                oldValue: oldDateOfLeaving,
+                newValue: null,
+            });
+        }
+
+        if (changes.length === 0) {
+            return res.status(200).json(foundEmployee);
+        }
+
+        await foundEmployee.save();
+
+        await createAuditLog({
+            tableName: "Employee",
+            recordId: foundEmployee._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(foundEmployee);
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     index,
     show,
@@ -432,4 +505,5 @@ module.exports = {
     create,
     update,
     updateMyContact,
+    updateStatus,
 }
