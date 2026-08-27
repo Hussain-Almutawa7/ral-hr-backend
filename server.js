@@ -32,7 +32,7 @@ const leaveCtrl = require("./controllers/leave-controller")
 
 
 // DOCUMENTS CONTROLLERS
-
+const documentCtrl = require("./controllers/documents-controller");
 
 // PAYROLL CONTROLLERS
 
@@ -54,7 +54,7 @@ const requireRole = require("./middleware/require-role");
 
 
 // DOCUMENTS MIDDLEWARES
-
+const uploadDocument = require("./middleware/upload-document");
 
 // PAYROLL MIDDLEWARES
 
@@ -116,6 +116,8 @@ app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 // ATTENDANCE ROUTES
 
 // DOCUMENTS ROUTES
+app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
+
 
 // PAYROLL ROUTES
 
