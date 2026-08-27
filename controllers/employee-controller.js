@@ -61,6 +61,38 @@ const create = async (req, res) => {
 
         if (!foundCompany) return res.status(404).json({ err: "Company not found." });
 
+        const stringFields = [
+            "employeeCode",
+            "nameEn",
+            "nameAr",
+            "cprNumber",
+            "gender",
+            "nationality",
+            "workerCategory",
+            "employmentType",
+            "status",
+            "iban",
+            "mobile",
+        ];
+
+        for (const field of stringFields) {
+            if (req.body[field] !== undefined && typeof req.body[field] !== "string")
+                return res.status(400).json({ err: `${field} must be text.` });
+        }
+
+        const nullableStringFields = [
+            "emailPersonal",
+            "emailWork",
+        ];
+
+        for (const field of nullableStringFields) {
+            if (req.body[field] !== undefined && req.body[field] !== null && typeof req.body[field] !== "string")
+                return res.status(400).json({ err: `${field} must be text or null.` });
+        }
+
+        if (req.body.isBahraini !== undefined && typeof req.body.isBahraini !== "boolean")
+            return res.status(400).json({ err: "isBahraini must be a boolean." });
+
         const requiredFields = [
             "employeeCode",
             "nameEn",
@@ -217,6 +249,37 @@ const update = async (req, res) => {
 
         const hasAllowedField = allowedFields.some(field => req.body[field] !== undefined);
         if (!hasAllowedField) return res.status(400).json({ err: "No valid fields provided." });
+
+        const stringFields = [
+            "employeeCode",
+            "nameEn",
+            "nameAr",
+            "cprNumber",
+            "gender",
+            "nationality",
+            "workerCategory",
+            "employmentType",
+            "iban",
+            "mobile",
+        ];
+
+        for (const field of stringFields) {
+            if (req.body[field] !== undefined && typeof req.body[field] !== "string")
+                return res.status(400).json({ err: `${field} must be text.` });
+        }
+
+        const nullableStringFields = [
+            "emailPersonal",
+            "emailWork",
+        ];
+
+        for (const field of nullableStringFields) {
+            if (req.body[field] !== undefined && req.body[field] !== null && typeof req.body[field] !== "string")
+                return res.status(400).json({ err: `${field} must be text or null.` });
+        }
+
+        if (req.body.isBahraini !== undefined && typeof req.body.isBahraini !== "boolean")
+            return res.status(400).json({ err: "isBahraini must be a boolean." });
 
         if (req.body.employeeCode !== undefined) {
             const employeeCode = req.body.employeeCode.trim();
@@ -385,6 +448,12 @@ const updateMyContact = async (req, res) => {
         const hasAllowedField = allowedFields.some(field => req.body[field] !== undefined);
         if (!hasAllowedField) return res.status(400).json({ err: "No valid fields provided." });
 
+        if (req.body.mobile !== undefined && typeof req.body.mobile !== "string")
+            return res.status(400).json({ err: "mobile must be text." });
+
+        if (req.body.emailPersonal !== undefined && req.body.emailPersonal !== null && typeof req.body.emailPersonal !== "string")
+            return res.status(400).json({ err: "emailPersonal must be text or null." });
+
         const changes = [];
 
         for (const field of allowedFields) {
@@ -404,22 +473,21 @@ const updateMyContact = async (req, res) => {
                     newValue: foundEmployee[field],
                 })
             }
-
-            if (changes.length === 0) return res.status(200).json(foundEmployee);
-            await foundEmployee.save();
-
-
-            await createAuditLog({
-                tableName: "Employee",
-                recordId: foundEmployee._id,
-                action: "Update",
-                changedBy: req.user._id,
-                changes,
-                ipAddress: req.ip,
-            });
-
-            res.status(200).json(foundEmployee)
         }
+
+        if (changes.length === 0) return res.status(200).json(foundEmployee);
+        await foundEmployee.save();
+
+        await createAuditLog({
+            tableName: "Employee",
+            recordId: foundEmployee._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(foundEmployee);
     } catch (e) {
         return res.status(500).json({ err: e.message });
     }
@@ -435,7 +503,7 @@ const updateStatus = async (req, res) => {
             "Active",
             "On Leave",
             "Suspended",
-            "Lef",
+            "Left",
         ]
 
         if (!req.body.status || !allowedStatuses.includes(req.body.status)) return res.status(400).json({ err: "Invalid employee status" });
