@@ -19,7 +19,7 @@ const deptCtrl = require("./controllers/departments-controller");
 
 // LEAVE CONTROLLERS
 const leaveRequestsCtrl = require("./controllers/leave-requests-controller")
-
+const leaveTypeCtrl = require("./controllers/leave-type-controller")
 
 // ATTENDANCE CONTROLLRES
 
@@ -66,8 +66,13 @@ app.patch("/api/departments/:departmentId", verifyToken, requireRole("HR Officer
 app.patch("/api/departments/:departmentId/status", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.updateStatus);
 
 // LEAVE ROUTES
-app.post("/api/leave-requests", verifyToken, leaveRequestsCtrl.create)
-app.get("/api/leave-requests", verifyToken, leaveRequestsCtrl.index)
+app.get("/api/leave/types", verifyToken, leaveTypeCtrl.index)
+app.post("/api/leave/types", verifyToken, requireRole("HR Manager"), leaveTypeCtrl.create)
+app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Manager"), leaveTypeCtrl.update)
+
+app.post("/api/leave/requests", verifyToken, leaveRequestsCtrl.create)
+app.get("/api/leave/requests", verifyToken, leaveRequestsCtrl.index)
+// app.get("/api/leave/requests/:leaveRequestId", verifyToken, leaveRequestsCtrl.show)
 
 // ATTENDANCE ROUTES
 
