@@ -21,6 +21,7 @@ const companyCtrl = require("./controllers/company-controller");
 const bankCtrl = require("./controllers/bank-controller");
 const settingsCtrl = require("./controllers/settings-controller");
 const employeeCtrl = require("./controllers/employee-controller");
+const docTypeCtrl = require("./controllers/document-type-controller");
 
 // LEAVE CONTROLLERS
 
@@ -92,6 +93,9 @@ app.get("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR
 app.post("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.create);
 app.patch("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.update);
 app.patch("/api/employees/:employeeId/status", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.updateStatus)
+
+app.get("/api/document-types", verifyToken, docTypeCtrl.index);
+
 
 // LEAVE ROUTES
 

@@ -15,8 +15,8 @@ const documentTypeSchema = new mongoose.Schema({
     },
     nameAr: {
         type: String,
-        required: true,
         trim: true,
+        default: null,
     },
     hasExpiry: {
         type: Boolean,

@@ -4,7 +4,7 @@ const escapeRegex = require("../utils/escapeRegex");
 
 const index = async (req, res) => {
     try {
-        const designations = await Designation.find()
+        const designations = await Designation.find();
 
         res.status(200).json(designations);
     } catch (e) {
