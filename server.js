@@ -92,10 +92,11 @@ app.get("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), 
 app.get("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.show);
 app.post("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.create);
 app.patch("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.update);
-app.patch("/api/employees/:employeeId/status", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.updateStatus)
+app.patch("/api/employees/:employeeId/status", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.updateStatus);
 
 app.get("/api/document-types", verifyToken, docTypeCtrl.index);
-
+app.post("/api/document-types", verifyToken, docTypeCtrl.create);
+app.patch("/api/document-types/:docTypeId", verifyToken, requireRole("HR Officer", "HR Manager"), docTypeCtrl.update);
 
 // LEAVE ROUTES
 
