@@ -175,8 +175,45 @@ const update = async (req, res) => {
     }
 }
 
+const updateStatus = async (req, res) => {
+    try {
+        const currentDocumentType = await DocumentType.findById(req.params.docTypeId);
+
+        if (!currentDocumentType) return res.status(404).json({ err: "Document type not found." });
+
+        const isActive = req.body.isActive;
+
+        if (typeof isActive !== "boolean") return res.status(400).json({ err: "isActive must be a boolean." });
+
+        if (isActive === currentDocumentType.isActive) return res.status(200).json(currentDocumentType);
+
+        const changes = [{
+            fieldName: "isActive",
+            oldValue: currentDocumentType.isActive,
+            newValue: isActive,
+        }]
+
+        currentDocumentType.isActive = isActive;
+        await currentDocumentType.save();
+
+        await createAuditLog({
+            tableName: "DocumentType",
+            recordId: currentDocumentType._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(currentDocumentType);
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     index,
     create,
     update,
+    updateStatus,
 }

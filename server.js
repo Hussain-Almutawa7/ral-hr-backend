@@ -97,6 +97,7 @@ app.patch("/api/employees/:employeeId/status", verifyToken, requireRole("HR Offi
 app.get("/api/document-types", verifyToken, docTypeCtrl.index);
 app.post("/api/document-types", verifyToken, docTypeCtrl.create);
 app.patch("/api/document-types/:docTypeId", verifyToken, requireRole("HR Manager"), docTypeCtrl.update);
+app.patch("/api/document-types/:docTypeId/status", verifyToken, requireRole("HR Manager"), docTypeCtrl.updateStatus);
 
 // LEAVE ROUTES
 
