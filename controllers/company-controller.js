@@ -24,11 +24,23 @@ const update = async (req, res) => {
         const hasNameAr = req.body.nameAr !== undefined;
         const hasCrNumber = req.body.crNumber !== undefined;
 
-        if (!hasNameEn && !hasNameAr && !hasCrNumber) return res.status(400).json({ err: "No company fields provided" });
+        if (hasNameEn && typeof req.body.nameEn !== "string")
+            return res.status(400).json({ err: "English name must be text." });
 
-        if (hasNameEn && req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name cannot be empty" });
+        if (hasNameAr && req.body.nameAr !== null && typeof req.body.nameAr !== "string")
+            return res.status(400).json({ err: "Arabic name must be text or null." });
 
-        if (hasCrNumber && req.body.crNumber.trim() === "") return res.status(400).json({ err: "CR Number cannot be empty" });
+        if (hasCrNumber && typeof req.body.crNumber !== "string")
+            return res.status(400).json({ err: "CR Number must be text." });
+
+        if (!hasNameEn && !hasNameAr && !hasCrNumber) 
+            return res.status(400).json({ err: "No company fields provided" });
+
+        if (hasNameEn && req.body.nameEn.trim() === "") 
+            return res.status(400).json({ err: "English name cannot be empty" });
+
+        if (hasCrNumber && req.body.crNumber.trim() === "") 
+            return res.status(400).json({ err: "CR Number cannot be empty" });
 
         const newNameEn = hasNameEn ? req.body.nameEn.trim() : currentCompany.nameEn;
         const newNameAr = hasNameAr ? req.body.nameAr ? req.body.nameAr.trim() : null : currentCompany.nameAr;
