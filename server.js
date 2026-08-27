@@ -89,6 +89,7 @@ app.get("/api/employees/me", verifyToken, employeeCtrl.me);
 app.get("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.index);
 app.get("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.show);
 app.post("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.create);
+app.patch("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.update);
 
 // LEAVE ROUTES
 
