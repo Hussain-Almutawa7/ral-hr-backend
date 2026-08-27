@@ -16,6 +16,11 @@ const userCtrl = require("./controllers/users-controller");
 
 // PEOPLE & SETTINGS CONTROLLERS
 const deptCtrl = require("./controllers/departments-controller");
+const designationCtrl = require("./controllers/designations-controller");
+const companyCtrl = require("./controllers/company-controller");
+const bankCtrl = require("./controllers/bank-controller");
+const settingsCtrl = require("./controllers/settings-controller");
+const employeeCtrl = require("./controllers/employee-controller");
 
 // LEAVE CONTROLLERS
 const leaveRequestsCtrl = require("./controllers/leave-requests-controller")
@@ -64,6 +69,30 @@ app.get("/api/departments", verifyToken, deptCtrl.index);
 app.post("/api/departments", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.create);
 app.patch("/api/departments/:departmentId", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.update);
 app.patch("/api/departments/:departmentId/status", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.updateStatus);
+
+app.get("/api/designations", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.index);
+app.post("/api/designations", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.create);
+app.patch("/api/designations/:designationId", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.update);
+app.patch("/api/designations/:designationId/status", verifyToken, requireRole("HR Officer", "HR Manager"), designationCtrl.updateStatus);
+
+app.get("/api/company", verifyToken, requireRole("HR Officer", "HR Manager"), companyCtrl.show);
+app.patch("/api/company", verifyToken, requireRole("HR Manager"), companyCtrl.update);
+
+app.get("/api/banks", verifyToken, requireRole("HR Officer", "HR Manager"), bankCtrl.index);
+app.post("/api/banks", verifyToken, requireRole("HR Manager"), bankCtrl.create);
+app.patch("/api/banks/:bankId", verifyToken, requireRole("HR Manager"), bankCtrl.update);
+app.patch("/api/banks/:bankId/status", verifyToken, requireRole("HR Manager"), bankCtrl.updateStatus);
+
+app.get("/api/settings", verifyToken, requireRole("HR Officer", "HR Manager"), settingsCtrl.show);
+app.patch("/api/settings", verifyToken, requireRole("HR Manager"), settingsCtrl.update);
+
+app.get("/api/employees/me", verifyToken, employeeCtrl.me);
+app.patch("/api/employees/me/contact", verifyToken, employeeCtrl.updateMyContact);
+app.get("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.index);
+app.get("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.show);
+app.post("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.create);
+app.patch("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.update);
+app.patch("/api/employees/:employeeId/status", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.updateStatus)
 
 // LEAVE ROUTES
 app.get("/api/leave/types", verifyToken, leaveTypeCtrl.index)

@@ -2,7 +2,6 @@ const Department = require("../models/department");
 const Company = require("../models/company");
 const createAuditLog = require("../utils/createAuditLog");
 const escapeRegex = require("../utils/escapeRegex");
-const { findByIdAndUpdate } = require("../models/user");
 
 const index = async (req, res) => {
     try {
@@ -17,6 +16,8 @@ const index = async (req, res) => {
 const create = async (req, res) => {
     try {
         const foundCompany = await Company.findOne();
+
+        if (!foundCompany) return res.status(404).json({ err: "Company not found." });
 
         if (!req.body.nameEn || req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name is required" });
         if (!foundCompany) return res.status(404).json({ err: "Company not found" });
@@ -95,7 +96,7 @@ const update = async (req, res) => {
         if (hasNameEn && req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name cannot be empty." });
 
         const newNameEn = hasNameEn ? req.body.nameEn.trim() : currentDept.nameEn;
-        const newNameAr = hasNameAr ? req.body.nameAr.trim() || null : currentDept.nameAr;
+        const newNameAr = hasNameAr ? req.body.nameAr ? req.body.nameAr.trim() : null : currentDept.nameAr;
 
         const namedConditions = [
             {
