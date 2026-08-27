@@ -1,5 +1,6 @@
 const DocumentType = require("../models/documentType");
 const createAuditLog = require("../utils/createAuditLog");
+const escapeRegex = require("../utils/escapeRegex");
 
 const index = async (req, res) => {
     try {
@@ -27,16 +28,32 @@ const create = async (req, res) => {
                 return res.status(400).json({ err: `${field} is required` });
         }
 
+        const code = req.body.code.trim().toLowerCase();
+        const nameEn = req.body.nameEn.trim();
+        const nameAr = req.body.nameAr ? req.body.nameAr.trim() : null;
+
+        const duplicateCondition = [
+            { code },
+            {
+                nameEn: {
+                    $regex: `^${escapeRegex(nameEn)}$`,
+                    $options: "i",
+                }
+            }
+        ]
+
+        if (nameAr) duplicateCondition.push({ nameAr });
+
         const foundDocumentType = await DocumentType.findOne({
-            code: req.body.code.trim().toLowerCase()
+            $or: duplicateCondition,
         });
 
-        if (foundDocumentType) return res.status(409).json({ err: "Code already exists" });
+        if (foundDocumentType) return res.status(409).json({ err: "Document type with this code or name already exists." });
 
         const docTypeData = {
-            code: req.body.code.tirm().toLowerCase(),
-            nameEn: req.body.nameEn.trim(),
-            nameAr: req.body.nameAr ? req.body.nameAr.trim() : null,
+            code,
+            nameEn,
+            nameAr,
             hasExpiry: req.body.hasExpiry,
             isActive: true,
         }
@@ -81,24 +98,40 @@ const update = async (req, res) => {
             "nameEn",
             "nameAr",
             "hasExpiry",
-            "isActive"
         ]
 
         const hasAllowedField = allowedFields.some(field => req.body[field] !== undefined);
         if (!hasAllowedField) return res.status(400).json({ err: "No valid fields provided." });
 
-        if (req.body.code !== undefined) {
-            const code = req.body.code.trim();
+        const hasCode = req.body.code !== undefined;
+        const hasNameEn = req.body.nameEn !== undefined;
+        const hasNameAr = req.body.nameAr !== undefined;
 
-            if (code === "") return res.status(400).json({ err: "Code cannot be empty" });
+        if (hasCode && req.body.code.trim() === "") return res.status(400).json({ err: "Code cannot be empty" })
+        if (hasNameEn && req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name cannot be empty." });
 
-            const duplicate = await DocumentType.findOne({
-                code,
-                _id: { $ne: foundDocumentType._id }
-            });
+        const newCode = hasCode ? req.body.code.trim().toLowerCase() : foundDocumentType.code;
+        const newNameEn = hasNameEn ? req.body.nameEn.trim() : foundDocumentType.nameEn;
+        const newNameAr = hasNameAr ? req.body.nameAr ? req.body.nameAr.trim() : null : foundDocumentType.nameAr;
 
-            if (duplicate) return res.status(409).json({ err: "Code already exists" });
-        }
+        const duplicateConditions = [
+            { code: newCode },
+            {
+                nameEn: {
+                    $regex: `^${escapeRegex(newNameEn)}$`,
+                    $options: "i",
+                }
+            }
+        ]
+
+        if (newNameAr) duplicateConditions.push({ nameAr: newNameAr });
+
+        const duplicate = await DocumentType.findOne({
+            _id: { $ne: foundDocumentType._id },
+            $or: duplicateConditions,
+        });
+
+        if (duplicate) return res.status(409).json({ err: "Document type with this code or name already exists" });
 
         const changes = [];
 
@@ -108,7 +141,9 @@ const update = async (req, res) => {
             const oldValue = foundDocumentType[field];
             let newValue = req.body[field];
 
-            if (typeof newValue === "string") newValue = newValue.trim();
+            if (field === "code") newValue = newCode;
+            if (field === "nameEn") newValue = newNameEn;
+            if (field === "nameAr") newValue = newNameAr;
 
             foundDocumentType[field] = newValue;
 
