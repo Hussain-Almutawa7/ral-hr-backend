@@ -86,6 +86,7 @@ app.get("/api/settings", verifyToken, requireRole("HR Officer", "HR Manager"), s
 app.patch("/api/settings", verifyToken, requireRole("HR Manager"), settingsCtrl.update);
 
 app.get("/api/employees/me", verifyToken, employeeCtrl.me);
+app.patch("/api/employees/me/contact", verifyToken, employeeCtrl.updateMyContact);
 app.get("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.index);
 app.get("/api/employees/:employeeId", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.show);
 app.post("/api/employees", verifyToken, requireRole("HR Officer", "HR Manager"), employeeCtrl.create);

@@ -372,10 +372,64 @@ const update = async (req, res) => {
     }
 }
 
+const updateMyContact = async (req, res) => {
+    try {
+        const foundEmployee = await Employee.findById(req.user.employee);
+        if (!foundEmployee) return res.status(404).json({ err: "Employee not found." });
+
+        const allowedFields = [
+            "mobile",
+            "emailPersonal",
+        ]
+
+        const hasAllowedField = allowedFields.some(field => req.body[field] !== undefined);
+        if (!hasAllowedField) return res.status(400).json({ err: "No valid fields provided." });
+
+        const changes = [];
+
+        for (const field of allowedFields) {
+            if (req.body[field] === undefined) continue;
+
+            const oldValue = foundEmployee[field];
+            let newValue = req.body[field];
+
+            if (typeof newValue === "string") newValue = newValue.trim();
+
+            foundEmployee[field] = newValue;
+
+            if (foundEmployee.isModified(field)) {
+                changes.push({
+                    fieldName: field,
+                    oldValue,
+                    newValue: foundEmployee[field],
+                })
+            }
+
+            if (changes.length === 0) return res.status(200).json(foundEmployee);
+            await foundEmployee.save();
+
+
+            await createAuditLog({
+                tableName: "Employee",
+                recordId: foundEmployee._id,
+                action: "Update",
+                changedBy: req.user._id,
+                changes,
+                ipAddress: req.ip,
+            });
+
+            res.status(200).json(foundEmployee)
+        }
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     index,
     show,
     me,
     create,
     update,
+    updateMyContact,
 }
