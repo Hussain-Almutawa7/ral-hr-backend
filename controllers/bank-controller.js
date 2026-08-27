@@ -14,7 +14,15 @@ const index = async (req, res) => {
 
 const create = async (req, res) => {
     try {
-        if (!req.body.nameEn || req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name is required" });
+
+        if (req.body.nameEn !== undefined && req.body.nameEn !== null && typeof req.body.nameEn !== "string")
+            return res.status(400).json({ err: "English name must be text." });
+
+        if (req.body.nameAr !== undefined && req.body.nameAr !== null && typeof req.body.nameAr !== "string")
+            return res.status(400).json({ err: "Arabic name must be text or null." });
+
+        if (!req.body.nameEn || req.body.nameEn.trim() === "")
+            return res.status(400).json({ err: "English name is required" });
 
         const bankData = {
             nameEn: req.body.nameEn.trim(),
@@ -80,9 +88,17 @@ const update = async (req, res) => {
         const hasNameEn = req.body.nameEn !== undefined;
         const hasNameAr = req.body.nameAr !== undefined;
 
-        if (!hasNameEn && !hasNameAr) return res.status(400).json({ err: "No bank fields provided" });
+        if (hasNameEn && req.body.nameEn !== null && typeof req.body.nameEn !== "string")
+            return res.status(400).json({ err: "English name must be text." });
 
-        if (hasNameEn && req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name cannot be empty" });
+        if (hasNameAr && req.body.nameAr !== null && typeof req.body.nameAr !== "string")
+            return res.status(400).json({ err: "Arabic name must be text or null." });
+
+        if (!hasNameEn && !hasNameAr)
+            return res.status(400).json({ err: "No bank fields provided" });
+
+        if (hasNameEn && req.body.nameEn.trim() === "")
+            return res.status(400).json({ err: "English name cannot be empty" });
 
         const newNameEn = hasNameEn ? req.body.nameEn.trim() : currentBank.nameEn;
         const newNameAr = hasNameAr ? req.body.nameAr ? req.body.nameAr.trim() : null : currentBank.nameAr;

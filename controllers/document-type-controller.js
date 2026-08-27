@@ -28,6 +28,18 @@ const create = async (req, res) => {
                 return res.status(400).json({ err: `${field} is required` });
         }
 
+        if (typeof req.body.code !== "string")
+            return res.status(400).json({ err: "Code must be text." });
+
+        if (typeof req.body.nameEn !== "string")
+            return res.status(400).json({ err: "English name must be text." });
+
+        if (req.body.nameAr !== undefined && req.body.nameAr !== null && typeof req.body.nameAr !== "string")
+            return res.status(400).json({ err: "Arabic name must be text or null." });
+
+        if (typeof req.body.hasExpiry !== "boolean")
+            return res.status(400).json({ err: "hasExpiry must be a boolean." });
+
         const code = req.body.code.trim().toLowerCase();
         const nameEn = req.body.nameEn.trim();
         const nameAr = req.body.nameAr ? req.body.nameAr.trim() : null;
@@ -107,8 +119,23 @@ const update = async (req, res) => {
         const hasNameEn = req.body.nameEn !== undefined;
         const hasNameAr = req.body.nameAr !== undefined;
 
-        if (hasCode && req.body.code.trim() === "") return res.status(400).json({ err: "Code cannot be empty" })
-        if (hasNameEn && req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name cannot be empty." });
+        if (hasCode && typeof req.body.code !== "string")
+            return res.status(400).json({ err: "Code must be text." });
+
+        if (hasNameEn && typeof req.body.nameEn !== "string")
+            return res.status(400).json({ err: "English name must be text." });
+
+        if (hasNameAr && req.body.nameAr !== null && typeof req.body.nameAr !== "string")
+            return res.status(400).json({ err: "Arabic name must be text or null." });
+
+        if (req.body.hasExpiry !== undefined && typeof req.body.hasExpiry !== "boolean")
+            return res.status(400).json({ err: "hasExpiry must be a boolean." });
+
+        if (hasCode && req.body.code.trim() === "")
+            return res.status(400).json({ err: "Code cannot be empty" });
+
+        if (hasNameEn && req.body.nameEn.trim() === "")
+            return res.status(400).json({ err: "English name cannot be empty." });
 
         const newCode = hasCode ? req.body.code.trim().toLowerCase() : foundDocumentType.code;
         const newNameEn = hasNameEn ? req.body.nameEn.trim() : foundDocumentType.nameEn;

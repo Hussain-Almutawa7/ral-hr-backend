@@ -19,8 +19,14 @@ const create = async (req, res) => {
 
         if (!foundCompany) return res.status(404).json({ err: "Company not found." });
 
-        if (!req.body.nameEn || req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name is required" });
-        if (!foundCompany) return res.status(404).json({ err: "Company not found" });
+        if (req.body.nameEn !== undefined && req.body.nameEn !== null && typeof req.body.nameEn !== "string")
+            return res.status(400).json({ err: "English name must be text." });
+
+        if (req.body.nameAr !== undefined && req.body.nameAr !== null && typeof req.body.nameAr !== "string")
+            return res.status(400).json({ err: "Arabic name must be text or null." });
+
+        if (!req.body.nameEn || req.body.nameEn.trim() === "")
+            return res.status(400).json({ err: "English name is required" });
 
         const deptData = {
             nameEn: req.body.nameEn.trim(),
@@ -92,8 +98,17 @@ const update = async (req, res) => {
         const hasNameEn = req.body.nameEn !== undefined;
         const hasNameAr = req.body.nameAr !== undefined;
 
-        if (!hasNameEn && !hasNameAr) return res.status(400).json({ err: "No department fields provided." });
-        if (hasNameEn && req.body.nameEn.trim() === "") return res.status(400).json({ err: "English name cannot be empty." });
+        if (hasNameEn && typeof req.body.nameEn !== "string")
+            return res.status(400).json({ err: "English name must be text." });
+
+        if (hasNameAr && req.body.nameAr !== null && typeof req.body.nameAr !== "string")
+            return res.status(400).json({ err: "Arabic name must be text or null." });
+
+        if (!hasNameEn && !hasNameAr)
+            return res.status(400).json({ err: "No department fields provided." });
+
+        if (hasNameEn && req.body.nameEn.trim() === "")
+            return res.status(400).json({ err: "English name cannot be empty." });
 
         const newNameEn = hasNameEn ? req.body.nameEn.trim() : currentDept.nameEn;
         const newNameAr = hasNameAr ? req.body.nameAr ? req.body.nameAr.trim() : null : currentDept.nameAr;
