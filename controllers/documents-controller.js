@@ -297,7 +297,42 @@ const reject = async (req, res) => {
 
 const archive = async (req, res) => {
     try {
+        const empDocument = await EmployeeDocument.findById(req.params.documentId);
 
+        if (!empDocument) return res.status(404).json({ err: "Employee document not found" });
+        if (empDocument.isArchived) return res.status(200).json(empDocument);
+
+        const oldArchive = empDocument.isArchived;
+        const oldArchivedAt = empDocument.archivedAt;
+
+        empDocument.isArchived = true;
+        empDocument.archivedAt = new Date();
+
+        const changes = [
+            {
+                fieldName: "isArchived",
+                oldValue: oldArchive,
+                newValue: empDocument.isArchived
+            },
+            {
+                fieldName: "archivedAt",
+                oldValue: oldArchivedAt,
+                newValue: empDocument.archivedAt
+            }
+        ]
+
+        await empDocument.save()
+
+        await createAuditLog({
+            tableName: "EmployeeDocument",
+            recordId: empDocument._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(empDocument);
     } catch (e) {
         res.status(500).json({ err: e.message });
     }
