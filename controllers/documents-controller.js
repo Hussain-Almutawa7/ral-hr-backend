@@ -250,7 +250,46 @@ const verify = async (req, res) => {
 
 const reject = async (req, res) => {
     try {
+        const empDocument = await EmployeeDocument.findById(req.params.documentId);
 
+        if (!empDocument || empDocument.isArchived) return res.status(404).json({ err: "Employee document not found" });
+
+        if (empDocument.status !== "Pending") return res.status(400).json({ err: "Only pending documents can be rejected." });
+
+        if (typeof req.body.rejectionReason !== "string" || req.body.rejectionReason.trim() === "")
+            return res.status(400).json({ err: "Rejection reason must be text." });
+
+        const oldStatus = empDocument.status;
+        const oldRejectionReason = empDocument.rejectionReason;
+
+        empDocument.status = "Rejected";
+        empDocument.rejectionReason = req.body.rejectionReason.trim();
+
+        const changes = [
+            {
+                fieldName: "status",
+                oldValue: oldStatus,
+                newValue: empDocument.status,
+            },
+            {
+                fieldName: "rejectionReason",
+                oldValue: oldRejectionReason,
+                newValue: empDocument.rejectionReason,
+            }
+        ];
+
+        await empDocument.save();
+
+        await createAuditLog({
+            tableName: "EmployeeDocument",
+            recordId: empDocument._id,
+            action: "Reject",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(empDocument);
     } catch (e) {
         res.status(500).json({ err: e.message });
     }
