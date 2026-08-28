@@ -72,6 +72,10 @@ const shiftTypeSchema = new mongoose.Schema({
         ref: "HolidayList",
         required: true,
     },
+    isActive: {
+        type: Boolean,
+        default: true,
+    },
 }, { timestamps: true });
 
 const ShiftType = mongoose.model("ShiftType", shiftTypeSchema);

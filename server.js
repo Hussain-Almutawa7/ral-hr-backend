@@ -29,7 +29,7 @@ const docTypeCtrl = require("./controllers/document-type-controller");
 const leaveCtrl = require("./controllers/leave-controller")
 
 // ATTENDANCE CONTROLLRES
-
+const shiftTypeCtrl = require("./controllers/shift-type-controller");
 
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
@@ -114,6 +114,7 @@ app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 // app.get("/api/leave/requests/:leaveRequestId", verifyToken, leaveRequestsCtrl.show)
 
 // ATTENDANCE ROUTES
+app.get("/api/shift-types", verifyToken, requireRole("HR Officer", "HR Manager"), shiftTypeCtrl.index);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
