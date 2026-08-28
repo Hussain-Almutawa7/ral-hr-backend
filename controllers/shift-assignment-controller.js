@@ -101,6 +101,20 @@ const create = async (req, res) => {
     }
 }
 
+const show = async (req, res) => {
+    try {
+        const shiftAssignment = await ShiftAssignment.findById(req.params.shiftAssignmentId)
+            .populate("employee", "employeeCode nameEn nameAr")
+            .populate("shiftType", "shiftName startTime endTime isActive");
+
+        if (!shiftAssignment) return res.status(404).json({ err: "Shift assignment not found" });
+
+        res.status(200).json(shiftAssignment)
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 const update = async (req, res) => {
     try {
         const currentShiftAssignment = await ShiftAssignment.findById(req.params.shiftAssignmentId);
@@ -195,5 +209,6 @@ const update = async (req, res) => {
 module.exports = {
     index,
     create,
+    show,
     update,
 }
