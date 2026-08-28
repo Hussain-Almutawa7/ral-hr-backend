@@ -96,8 +96,22 @@ const index = async (req, res) => {
         documents = await EmployeeDocument.find(filter)
             .populate("employee", "employeeCode nameEn nameAr")
             .populate("documentType", "code nameEn nameAr hasExpiry")
-            .populate("uploadedBy", "email role")
-            .populate("verifiedBy", "email role")
+            .populate({
+                path: "uploadedBy",
+                select: "email role employee",
+                populate: {
+                    path: "employee",
+                    select: "employeeCode nameEn nameAr"
+                }
+            })
+            .populate({
+                path: "verifiedBy",
+                select: "email role employee",
+                populate: {
+                    path: "employee",
+                    select: "employeeCode nameEn nameAr"
+                }
+            })
 
         res.status(200).json(documents);
     } catch (e) {
