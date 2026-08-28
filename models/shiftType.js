@@ -9,14 +9,19 @@ const shiftTypeSchema = new mongoose.Schema({
     startTime: {
         type: String,
         required: true,
+        trim: true,
+        match: /^([01]\d|2[0-3]):[0-5]\d$/,
     },
     endTime: {
         type: String,
         required: true,
+        trim: true,
+        match: /^([01]\d|2[0-3]):[0-5]\d$/,
     },
     breakMinutes: {
         type: Number,
         required: true,
+        min: 0,
     },
     workingDays: {
         type: [String],
@@ -34,26 +39,32 @@ const shiftTypeSchema = new mongoose.Schema({
     checkinAllowedMinutesBefore: {
         type: Number,
         required: true,
+        min: 0,
     },
     lateGraceMinutes: {
         type: Number,
         required: true,
+        min: 0,
     },
     earlyExitGraceMinutes: {
         type: Number,
         required: true,
+        min: 0,
     },
     checkoutAllowedMinutesAfter: {
         type: Number,
         required: true,
+        min: 0,
     },
     halfDayHoursThreshold: {
         type: Number,
         required: true,
+        min: 0,
     },
     absentHoursThreshold: {
         type: Number,
         required: true,
+        min: 0,
     },
     markLateEntry: {
         type: Boolean,

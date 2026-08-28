@@ -115,6 +115,7 @@ app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 
 // ATTENDANCE ROUTES
 app.get("/api/shift-types", verifyToken, requireRole("HR Officer", "HR Manager"), shiftTypeCtrl.index);
+app.post("/api/shift-types", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.create);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
