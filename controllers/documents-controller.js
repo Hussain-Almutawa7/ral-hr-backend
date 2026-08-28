@@ -338,6 +338,35 @@ const archive = async (req, res) => {
     }
 }
 
+const archived = async (req, res) => {
+    try {
+
+        const documents = await EmployeeDocument.find({ isArchived: true })
+            .populate("employee", "employeeCode nameEn nameAr")
+            .populate("documentType", "code nameEn nameAr hasExpiry")
+            .populate({
+                path: "uploadedBy",
+                select: "email role employee",
+                populate: {
+                    path: "employee",
+                    select: "employeeCode nameEn nameAr"
+                }
+            })
+            .populate({
+                path: "verifiedBy",
+                select: "email role employee",
+                populate: {
+                    path: "employee",
+                    select: "employeeCode nameEn nameAr"
+                }
+            })
+
+        res.status(200).json(documents);
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     create,
     index,
@@ -346,4 +375,5 @@ module.exports = {
     verify,
     reject,
     archive,
+    archived,
 }

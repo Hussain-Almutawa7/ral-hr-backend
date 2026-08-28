@@ -118,6 +118,7 @@ app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
 app.get("/api/documents", verifyToken, documentCtrl.index);
+app.get("/api/documents/archived", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.archived);
 app.get("/api/documents/:documentId", verifyToken, documentCtrl.show);
 app.get("/api/documents/:documentId/download", verifyToken, documentCtrl.download);
 app.patch("/api/documents/:documentId/verify", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.verify);
