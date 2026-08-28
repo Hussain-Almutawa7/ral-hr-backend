@@ -197,6 +197,51 @@ const download = async (req, res) => {
 
 const verify = async (req, res) => {
     try {
+        const empDocument = await EmployeeDocument.findById(req.params.documentId);
+
+        if (!empDocument || empDocument.isArchived) return res.status(404).json({ err: "Employee document not found" });
+
+        if (empDocument.status !== "Pending") return res.status(400).json({ err: "Only pending documents can be verified." });
+
+        const oldStatus = empDocument.status;
+        const oldVerifiedBy = empDocument.verifiedBy;
+        const oldVerifiedOn = empDocument.verifiedOn;
+
+        empDocument.status = "Verified";
+        empDocument.verifiedBy = req.user._id;
+        empDocument.verifiedOn = new Date();
+        empDocument.rejectionReason = null;
+
+        const changes = [
+            {
+                fieldName: "status",
+                oldValue: oldStatus,
+                newValue: empDocument.status,
+            },
+            {
+                fieldName: "verifiedBy",
+                oldValue: oldVerifiedBy,
+                newValue: empDocument.verifiedBy,
+            },
+            {
+                fieldName: "verifiedOn",
+                oldValue: oldVerifiedOn,
+                newValue: empDocument.verifiedOn,
+            },
+        ];
+
+        await empDocument.save();
+
+        await createAuditLog({
+            tableName: "EmployeeDocument",
+            recordId: empDocument._id,
+            action: "Approve",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(empDocument);
 
     } catch (e) {
         res.status(500).json({ err: e.message });
