@@ -84,6 +84,28 @@ const create = async (req, res) => {
     }
 }
 
+const index = async (req, res) => {
+    try {
+        const isHR = req.user.role === "HR Manager" || req.user.role === "HR Officer";
+        const filter = { isArchived: false };
+
+        let documents;
+
+        if (!isHR) filter.employee = req.user.employee;
+
+        documents = await EmployeeDocument.find(filter)
+            .populate("employee", "employeeCode nameEn nameAr")
+            .populate("documentType", "code nameEn nameAr hasExpiry")
+            .populate("uploadedBy", "email role")
+            .populate("verifiedBy", "email role")
+
+        res.status(200).json(documents);
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     create,
+    index,
 }
