@@ -340,7 +340,6 @@ const archive = async (req, res) => {
 
 const archived = async (req, res) => {
     try {
-
         const documents = await EmployeeDocument.find({ isArchived: true })
             .populate("employee", "employeeCode nameEn nameAr")
             .populate("documentType", "code nameEn nameAr hasExpiry")
