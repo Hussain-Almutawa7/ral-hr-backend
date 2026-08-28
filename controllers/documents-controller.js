@@ -119,7 +119,46 @@ const index = async (req, res) => {
     }
 }
 
+const show = async (req, res) => {
+    try {
+        const isHR = req.user.role === "HR Manager" || req.user.role === "HR Officer";
+        const filter = {
+            _id: req.params.documentId,
+            isArchived: false,
+        };
+
+        if (!isHR) filter.employee = req.user.employee;
+
+        const foundDocument = await EmployeeDocument.findOne(filter)
+            .populate("employee", "employeeCode nameEn nameAr")
+            .populate("documentType", "code nameEn nameAr hasExpiry")
+            .populate({
+                path: "uploadedBy",
+                select: "email role employee",
+                populate: {
+                    path: "employee",
+                    select: "employeeCode nameEn nameAr"
+                }
+            })
+            .populate({
+                path: "verifiedBy",
+                select: "email role employee",
+                populate: {
+                    path: "employee",
+                    select: "employeeCode nameEn nameAr"
+                }
+            });
+
+        if (!foundDocument) return res.status(404).json({ err: "Employee document not found." });
+
+        res.status(200).json(foundDocument);
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     create,
     index,
+    show,
 }
