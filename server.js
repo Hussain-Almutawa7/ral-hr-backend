@@ -30,6 +30,7 @@ const leaveCtrl = require("./controllers/leave-controller")
 
 // ATTENDANCE CONTROLLRES
 const shiftTypeCtrl = require("./controllers/shift-type-controller");
+const shiftAssignmentCtrl = require("./controllers/shift-assignment-controller");
 
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
@@ -118,6 +119,8 @@ app.get("/api/shift-types", verifyToken, requireRole("HR Officer", "HR Manager")
 app.post("/api/shift-types", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.create);
 app.patch("/api/shift-types/:shiftTypeId", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.update);
 app.patch("/api/shift-types/:shiftTypeId/status", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.updateStatus);
+
+app.post("/api/shift-assignments", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.create);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
