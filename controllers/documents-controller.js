@@ -4,7 +4,7 @@ const DocumentType = require("../models/documentType");
 const StatutorySettings = require("../models/statutorySettings");
 
 const createAuditLog = require("../utils/createAuditLog");
-const { uploadFile } = require("../utils/gridfs");
+const { uploadFile, getBucket } = require("../utils/gridfs");
 
 const create = async (req, res) => {
     try {
@@ -157,8 +157,40 @@ const show = async (req, res) => {
     }
 }
 
+const download = async (req, res) => {
+    try {
+        const isHR = req.user.role === "HR Manager" || req.user.role === "HR Officer";
+        const filter = {
+            _id: req.params.documentId,
+            isArchived: false,
+        };
+
+        if (!isHR) filter.employee = req.user.employee;
+
+        const foundDocument = await EmployeeDocument.findOne(filter);
+        if (!foundDocument) return res.status(404).json({ err: "Employee document not found." });
+
+        const fileId = foundDocument.fileId;
+        const bucket = getBucket();
+
+        const files = await bucket.find({ _id: fileId }).toArray();
+        if (files.length === 0) return res.status(404).json({ err: "File not found" });
+
+        const file = files[0];
+
+        res.set("Content-Type", file.metadata.contentType);
+        res.set("Content-Disposition", `attachment; filename="${file.filename}"`);
+
+        const downloadStream = bucket.openDownloadStream(fileId);
+        downloadStream.pipe(res);
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     create,
     index,
     show,
+    download,
 }

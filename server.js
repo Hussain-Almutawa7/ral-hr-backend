@@ -119,6 +119,7 @@ app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
 app.get("/api/documents", verifyToken, documentCtrl.index);
 app.get("/api/documents/:documentId", verifyToken, documentCtrl.show);
+app.get("/api/documents/:documentId/download", verifyToken, documentCtrl.download);
 
 // PAYROLL ROUTES
 
