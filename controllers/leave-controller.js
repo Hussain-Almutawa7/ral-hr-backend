@@ -262,6 +262,84 @@ const createAllocation = async (req, res) => {
     }
 }
 
+const updatableAllocationFields = [
+    "daysAllocated", "daysCarriedForward", "periodStart", "periodEnd"
+]
+
+const updateAllocation = async (req, res) => {
+    try {
+        const currentAllocation = await LeaveAllocation.findById(req.params.allocationId)
+        if (!currentAllocation) {
+            return res.status(404).json({ err: "Leave allocation not found" })
+        }
+
+        const changes = []
+
+        const dateFields = ["periodStart", "periodEnd"]
+
+        for (let i = 0; i < updatableAllocationFields.length; i++) {
+            const field = updatableAllocationFields[i]
+
+            const wasProvided = req.body[field] !== undefined
+            if (!wasProvided) continue
+
+            let currentValue = currentAllocation[field]
+            let newValue = req.body[field]
+
+            if (dateFields.includes(field)) {
+                currentValue = new Date(currentValue).getTime()
+                newValue = new Date(newValue).getTime()
+            }
+
+            if (currentValue !== newValue) {
+                changes.push({
+                    fieldName: field,
+                    oldValue: currentAllocation[field],
+                    newValue: req.body[field],
+                })
+
+                currentAllocation[field] = req.body[field]
+            }
+        }
+
+        if (changes.length === 0) {
+            return res.status(400).json({ err: "No changes provided" })
+        }
+
+        const periodChanged = changes.some((change) => change.fieldName === "periodStart" || change.fieldName === "periodEnd")
+
+        if (periodChanged) {
+            const duplicateAllocation = await LeaveAllocation.findOne({
+                _id: { $ne: currentAllocation._id },
+                employee: currentAllocation.employee,
+                leaveType: currentAllocation.leaveType,
+                periodStart: currentAllocation.periodStart,
+                periodEnd: currentAllocation.periodEnd,
+            })
+
+            if (duplicateAllocation) {
+                return res.status(409).json({ err: "An allocation already exists for this employee, leave type, and period" })
+            }
+        }
+
+        await currentAllocation.save()
+
+        await createAuditLog({
+            tableName: "LeaveAllocation",
+            recordId: currentAllocation._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        })
+
+        res.status(200).json(currentAllocation)
+
+    } catch (error) {
+        return res.status(400).json({ err: error.message })
+    }
+}
+
 
 
 const indexRequest = async (req, res) => {
@@ -438,6 +516,7 @@ module.exports = {
     updateType,
     indexAllocations,
     createAllocation,
+    updateAllocation,
     indexRequest,
     createRequest,
 }

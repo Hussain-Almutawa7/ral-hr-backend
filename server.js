@@ -108,6 +108,7 @@ app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Manager"
 
 app.get("/api/leave/allocations", verifyToken, leaveCtrl.indexAllocations)
 app.post("/api/leave/allocations", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createAllocation)
+app.patch("/api/leave/allocations/:allocationId", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.updateAllocation)
 
 app.post("/api/leave/requests", verifyToken, leaveCtrl.createRequest)
 app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
