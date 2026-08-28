@@ -3,6 +3,30 @@ const ShiftType = require("../models/shiftType");
 const Employee = require("../models/employee");
 
 const createAuditLog = require("../utils/createAuditLog");
+const ShiftAssignment = require("../models/shiftAssignment");
+
+const index = async (req, res) => {
+    try {
+        const filter = {};
+
+        if (req.query.employee !== undefined) {
+            const employee = await Employee.findById(req.query.employee);
+
+            if (!employee) return res.status(400).json({ err: "Invalid employee." });
+
+            filter.employee = employee._id;
+        }
+
+        const shiftAssignments = await ShiftAssignment.find(filter)
+            .populate("employee", "employeeCode nameEn nameAr")
+            .populate("shiftType", "shiftName startTime endTime isActive")
+            .sort({ fromDate: -1 });
+
+        res.status(200).json(shiftAssignments);
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
 
 const create = async (req, res) => {
     try {
@@ -169,6 +193,7 @@ const update = async (req, res) => {
 }
 
 module.exports = {
+    index,
     create,
     update,
 }

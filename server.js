@@ -120,6 +120,7 @@ app.post("/api/shift-types", verifyToken, requireRole("HR Manager"), shiftTypeCt
 app.patch("/api/shift-types/:shiftTypeId", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.update);
 app.patch("/api/shift-types/:shiftTypeId/status", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.updateStatus);
 
+app.get("/api/shift-assignemts", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.index);
 app.post("/api/shift-assignments", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.create);
 app.patch("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.update);
 
