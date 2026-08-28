@@ -191,8 +191,48 @@ const update = async (req, res) => {
     }
 }
 
+const updateStatus = async (req, res) => {
+    try {
+        const currentShiftType = await ShiftType.findById(req.params.shiftTypeId);
+
+        if (!currentShiftType) return res.status(404).json({ err: "Shift Type not found" });
+
+        const isActive = req.body.isActive;
+
+        if (typeof isActive !== "boolean") return res.status(400).json({ err: "isActive must be a boolean" });
+
+        if (isActive === currentShiftType.isActive) return res.status(200).json(currentShiftType);
+
+        const changes = [{
+            fieldName: "isActive",
+            oldValue: currentShiftType.isActive,
+            newValue: isActive,
+        }]
+
+        currentShiftType.isActive = isActive;
+        await currentShiftType.save();
+
+        await createAuditLog({
+            tableName: "ShiftType",
+            recordId: currentShiftType._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(currentShiftType);
+    } catch (e) {
+        if (e.name === "ValidationError" || e.name === "CastError")
+            return res.status(400).json({ err: e.message });
+
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     index,
     create,
     update,
+    updateStatus,
 }
