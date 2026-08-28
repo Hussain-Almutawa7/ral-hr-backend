@@ -83,6 +83,110 @@ const create = async (req, res) => {
         res.status(201).json(createdShiftType);
 
     } catch (e) {
+        if (e.name === "ValidationError" || e.name === "CastError")
+            return res.status(400).json({ err: e.message });
+
+        return res.status(500).json({ err: e.message });
+    }
+}
+
+const update = async (req, res) => {
+    try {
+        const currentShiftType = await ShiftType.findById(req.params.shiftTypeId);
+
+        if (!currentShiftType) return res.status(404).json({ err: "Shift Type not found" });
+
+        const allowedFields = [
+            "shiftName",
+            "startTime",
+            "endTime",
+            "breakMinutes",
+            "workingDays",
+            "checkinAllowedMinutesBefore",
+            "lateGraceMinutes",
+            "earlyExitGraceMinutes",
+            "checkoutAllowedMinutesAfter",
+            "halfDayHoursThreshold",
+            "absentHoursThreshold",
+            "markLateEntry",
+            "markEarlyExit",
+            "allowOvertime",
+            "holidayList",
+        ];
+
+        const hasAllowedField = allowedFields.some(field => req.body[field] !== undefined);
+        if (!hasAllowedField) return res.status(400).json({ err: "No valid fields provided." });
+
+        const hasShiftName = req.body.shiftName !== undefined;
+
+        if (hasShiftName && typeof req.body.shiftName !== "string")
+            return res.status(400).json({ err: "Shift name must be text." });
+
+        if (hasShiftName && req.body.shiftName.trim() === "")
+            return res.status(400).json({ err: "Shift name cannot be empty." });
+
+        const newShiftName = hasShiftName ? req.body.shiftName.trim() : currentShiftType.shiftName;
+
+        const duplicate = await ShiftType.findOne({
+            _id: { $ne: currentShiftType._id },
+            shiftName: {
+                $regex: `^${escapeRegex(newShiftName)}$`,
+                $options: "i",
+            }
+        });
+
+        if (duplicate) return res.status(409).json({ err: "Shift Type with this name already exists." });
+
+        if (req.body.workingDays !== undefined && (!Array.isArray(req.body.workingDays) || req.body.workingDays.length === 0))
+            return res.status(400).json({ err: "workingDays must contain at least one day." });
+
+        let holidayList;
+        if (req.body.holidayList !== undefined) {
+            holidayList = await HolidayList.findById(req.body.holidayList);
+
+            if (!holidayList) return res.status(400).json({ err: "Invalid holiday list." });
+        }
+
+        const changes = [];
+
+        for (const field of allowedFields) {
+            if (req.body[field] === undefined) continue;
+
+            const oldValue = currentShiftType[field];
+            let newValue = req.body[field];
+
+            if (field === "holidayList") newValue = holidayList._id;
+            if (typeof newValue === "string") newValue = newValue.trim();
+
+            currentShiftType[field] = newValue;
+
+            if (currentShiftType.isModified(field)) {
+                changes.push({
+                    fieldName: field,
+                    oldValue,
+                    newValue: currentShiftType[field],
+                });
+            }
+        }
+
+        if (changes.length === 0) return res.status(200).json(currentShiftType);
+        await currentShiftType.save();
+
+
+        await createAuditLog({
+            tableName: "ShiftType",
+            recordId: currentShiftType._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(currentShiftType);
+    } catch (e) {
+        if (e.name === "ValidationError" || e.name === "CastError")
+            return res.status(400).json({ err: e.message });
+
         return res.status(500).json({ err: e.message });
     }
 }
@@ -90,4 +194,5 @@ const create = async (req, res) => {
 module.exports = {
     index,
     create,
+    update,
 }
