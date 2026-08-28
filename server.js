@@ -32,7 +32,7 @@ const leaveCtrl = require("./controllers/leave-controller")
 
 
 // DOCUMENTS CONTROLLERS
-
+const documentCtrl = require("./controllers/documents-controller");
 
 // PAYROLL CONTROLLERS
 
@@ -54,7 +54,7 @@ const requireRole = require("./middleware/require-role");
 
 
 // DOCUMENTS MIDDLEWARES
-
+const uploadDocument = require("./middleware/upload-document");
 
 // PAYROLL MIDDLEWARES
 
@@ -116,6 +116,14 @@ app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 // ATTENDANCE ROUTES
 
 // DOCUMENTS ROUTES
+app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
+app.get("/api/documents", verifyToken, documentCtrl.index);
+app.get("/api/documents/archived", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.archived);
+app.get("/api/documents/:documentId", verifyToken, documentCtrl.show);
+app.get("/api/documents/:documentId/download", verifyToken, documentCtrl.download);
+app.patch("/api/documents/:documentId/verify", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.verify);
+app.patch("/api/documents/:documentId/reject", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.reject);
+app.patch("/api/documents/:documentId/archive", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.archive);
 
 // PAYROLL ROUTES
 

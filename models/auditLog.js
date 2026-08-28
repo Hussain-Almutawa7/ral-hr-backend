@@ -19,6 +19,7 @@ const auditLogSchema = new mongoose.Schema({
             "Approve",
             "Cancel",
             "Correct",
+            "Reject",
         ],
         required: true,
     },
