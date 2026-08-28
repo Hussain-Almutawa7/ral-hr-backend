@@ -120,6 +120,9 @@ app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentC
 app.get("/api/documents", verifyToken, documentCtrl.index);
 app.get("/api/documents/:documentId", verifyToken, documentCtrl.show);
 app.get("/api/documents/:documentId/download", verifyToken, documentCtrl.download);
+app.patch("/api/documents/:documentId/verify", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.verify);
+app.patch("/api/documents/:documentId/reject", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.reject);
+app.patch("/api/documents/:documentId/archive", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.archive);
 
 // PAYROLL ROUTES
 

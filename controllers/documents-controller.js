@@ -182,7 +182,38 @@ const download = async (req, res) => {
         res.set("Content-Disposition", `attachment; filename="${file.filename}"`);
 
         const downloadStream = bucket.openDownloadStream(fileId);
+
+        downloadStream.on("error", e => {
+            if (!res.headerSent) return res.status(500).json({ err: "Error downloading file." });
+
+            res.destroy(e);
+        });
+
         downloadStream.pipe(res);
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
+const verify = async (req, res) => {
+    try {
+
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
+const reject = async (req, res) => {
+    try {
+
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
+const archive = async (req, res) => {
+    try {
+
     } catch (e) {
         res.status(500).json({ err: e.message });
     }
@@ -193,4 +224,7 @@ module.exports = {
     index,
     show,
     download,
+    verify,
+    reject,
+    archive,
 }
