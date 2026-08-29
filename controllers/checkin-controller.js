@@ -2,6 +2,7 @@ const Checkin = require("../models/checkin");
 const Employee = require("../models/employee");
 const ShiftAssignemt = require("../models/shiftAssignment");
 const Attendance = require("../models/attendance");
+const Holiday = require("../models/holiday");
 
 const create = async (req, res) => {
     try {
@@ -41,14 +42,43 @@ const create = async (req, res) => {
                     { toDate: null },
                     { toDate: { $gte: todayStart } }
                 ]
-            }).populate("shiftType");
+            }).populate({
+                path: "shiftType",
+                populate: {
+                    path: "holidayList"
+                }
+            });
 
             if (!shiftAssignemt) return res.status(400).json({ err: "No shift assignment found for today." });
+
+            const holidayList = shiftAssignemt.shiftType.holidayList;
+
+            const dayName = timestamp.toLocaleDateString("en-US", {
+                weekday: "long",
+                timeZone: "Asia/Bahrain"
+            });
+
+            const isWeeklyOff = holidayList.weeklyOffDays.includes(dayName);
+
+            const holiday = await Holiday.findOne({
+                holidayList: holidayList._id,
+                date: todayStart,
+                isConfirmed: true,
+            });
+
+            const isHoliday = holiday ? true : false;
+
+            let status = "Present";
+
+            if (isHoliday) 
+                status = "Holiday";
+            else if (isWeeklyOff) status = "Weekly Off";
+
 
             const attendanceData = {
                 employee: employee._id,
                 date: todayStart,
-                status: "Present",
+                status,
                 shiftType: shiftAssignemt.shiftType._id,
                 inTime: timestamp,
                 isIncomplete: true,
