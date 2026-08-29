@@ -1,6 +1,7 @@
 const Attendance = require("../models/attendance");
 const ShiftAssignment = require("../models/shiftAssignment");
 const Holiday = require("../models/holiday");
+const LeaveRequest = require("../models/leaveRequest");
 
 const getBahrainDate = require("../utils/getBahrainDate");
 
@@ -63,6 +64,13 @@ const generate = async (req, res) => {
             const holidayList = assignment.shiftType.holidayList;
             const isWeeklyOff = holidayList.weeklyOffDays.includes(dayName);
 
+            const approvedLeave = await LeaveRequest.findOne({
+                employee: assignment.employee._id,
+                status: "Approved",
+                fromDate: { $lte: date },
+                toDate: { $gte: date },
+            });
+
             const holiday = await Holiday.findOne({
                 holidayList: holidayList._id,
                 date,
@@ -70,11 +78,21 @@ const generate = async (req, res) => {
             });
 
             let status = "Absent";
+            let leaveRequest = null;
 
             if (holiday)
                 status = "Holiday";
             else if (isWeeklyOff)
                 status = "Weekly Off";
+            else if (approvedLeave) {
+                leaveRequest = approvedLeave._id;
+
+                if (approvedLeave.isHalfDay && approvedLeave.halfDayDate && getBahrainDate(approvedLeave.halfDayDate).getTime() === date.getTime()) {
+                    status = "Half Day";
+                } else {
+                    status = "On Leave";
+                }
+            }
 
             await Attendance.create({
                 employee: assignment.employee._id,
@@ -85,6 +103,7 @@ const generate = async (req, res) => {
                 outTime: null,
                 workedHours: 0,
                 isIncomplete: false,
+                leaveRequest,
             });
 
             generated++;
