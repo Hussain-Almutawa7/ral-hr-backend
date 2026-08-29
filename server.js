@@ -29,7 +29,12 @@ const docTypeCtrl = require("./controllers/document-type-controller");
 const leaveCtrl = require("./controllers/leave-controller")
 
 // ATTENDANCE CONTROLLRES
-
+const shiftTypeCtrl = require("./controllers/shift-type-controller");
+const shiftAssignmentCtrl = require("./controllers/shift-assignment-controller");
+const holidayListCtrl = require("./controllers/holiday-list-controller");
+const holidayCtrl = require("./controllers/holiday-controller");
+const checkinCtrl = require("./controllers/checkin-controller");
+const attendanceCtrl = require("./controllers/attendance-controller");
 
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
@@ -117,6 +122,28 @@ app.get("/api/leave/requests/:requestId", verifyToken, leaveCtrl.showRequest)
 app.patch("/api/leave/requests/:requestId/review", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), leaveCtrl.reviewRequest)
 
 // ATTENDANCE ROUTES
+app.get("/api/shift-types", verifyToken, requireRole("HR Officer", "HR Manager"), shiftTypeCtrl.index);
+app.post("/api/shift-types", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.create);
+app.patch("/api/shift-types/:shiftTypeId", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.update);
+app.patch("/api/shift-types/:shiftTypeId/status", verifyToken, requireRole("HR Manager"), shiftTypeCtrl.updateStatus);
+
+app.get("/api/shift-assignments", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.index);
+app.post("/api/shift-assignments", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.create);
+app.get("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.show);
+app.patch("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.update);
+
+app.get("/api/holiday-lists", verifyToken, requireRole("HR Officer", "HR Manager"), holidayListCtrl.index);
+app.post("/api/holiday-lists", verifyToken, requireRole("HR Manager"), holidayListCtrl.create);
+app.patch("/api/holiday-lists/:holidayListId", verifyToken, requireRole("HR Manager"), holidayListCtrl.update);
+
+app.get("/api/holidays", verifyToken, requireRole("HR Officer", "HR Manager"), holidayCtrl.index);
+app.post("/api/holidays", verifyToken, requireRole("HR Manager"), holidayCtrl.create);
+app.patch("/api/holidays/:holidayId", verifyToken, requireRole("HR Manager"), holidayCtrl.update);
+
+app.post("/api/checkins", verifyToken, checkinCtrl.create);
+app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
+
+app.post("/api/attendance/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
