@@ -35,6 +35,7 @@ const holidayListCtrl = require("./controllers/holiday-list-controller");
 const holidayCtrl = require("./controllers/holiday-controller");
 const checkinCtrl = require("./controllers/checkin-controller");
 const attendanceCtrl = require("./controllers/attendance-controller");
+const attendanceCorrectionCtrl = require("./controllers/attendance-correction-controller");
 
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
@@ -148,6 +149,8 @@ app.post("/api/attendances/generate", verifyToken, requireRole("HR Manager", "HR
 app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
 app.get("/api/attendances/team", verifyToken, requireRole("Manager"), attendanceCtrl.teamAttendance);
 app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager"), attendanceCtrl.updateOvertime);
+
+app.post("/api/attendance-crrections", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.create);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
