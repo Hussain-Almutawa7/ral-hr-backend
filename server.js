@@ -128,6 +128,7 @@ app.get("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole("H
 app.patch("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.update);
 
 app.get("/api/holiday-lists", verifyToken, requireRole("HR Officer", "HR Manager"), holidayListCtrl.index);
+app.post("/api/holiday-lists", verifyToken, requireRole("HR Manager"), holidayListCtrl.create);
 
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
 app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
