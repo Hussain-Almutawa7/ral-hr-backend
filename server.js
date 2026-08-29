@@ -110,9 +110,10 @@ app.get("/api/leave/allocations", verifyToken, leaveCtrl.indexAllocations)
 app.post("/api/leave/allocations", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createAllocation)
 app.patch("/api/leave/allocations/:allocationId", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.updateAllocation)
 
-app.post("/api/leave/requests", verifyToken, leaveCtrl.createRequest)
+app.post("/api/leave/requests", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), leaveCtrl.createRequest)
+app.patch("/api/leave/requests/:requestId/submit", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), leaveCtrl.submitRequest)
 app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
-// app.get("/api/leave/requests/:leaveRequestId", verifyToken, leaveRequestsCtrl.show)
+app.get("/api/leave/requests/:requestId", verifyToken, leaveCtrl.showRequest)
 
 // ATTENDANCE ROUTES
 
