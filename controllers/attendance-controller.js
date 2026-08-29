@@ -90,7 +90,7 @@ const generate = async (req, res) => {
             generated++;
         }
 
-        await res.status(200).json({
+        res.status(200).json({
             message: "Attendance generation completed.",
             generated,
             skipped,
