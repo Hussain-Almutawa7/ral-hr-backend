@@ -133,6 +133,7 @@ app.post("/api/holiday-lists", verifyToken, requireRole("HR Manager"), holidayLi
 app.patch("/api/holiday-lists/:holidayListId", verifyToken, requireRole("HR Manager"), holidayListCtrl.update);
 
 app.get("/api/holidays", verifyToken, requireRole("HR Officer", "HR Manager"), holidayCtrl.index);
+app.post("/api/holidays", verifyToken, requireRole("HR Manager"), holidayCtrl.create);
 
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
 app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
