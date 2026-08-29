@@ -134,6 +134,7 @@ app.patch("/api/holiday-lists/:holidayListId", verifyToken, requireRole("HR Mana
 
 app.get("/api/holidays", verifyToken, requireRole("HR Officer", "HR Manager"), holidayCtrl.index);
 app.post("/api/holidays", verifyToken, requireRole("HR Manager"), holidayCtrl.create);
+app.patch("/api/holidays/:holidayId", verifyToken, requireRole("HR Manager"), holidayCtrl.update);
 
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
 app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
