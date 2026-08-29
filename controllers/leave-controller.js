@@ -635,6 +635,59 @@ const submitRequest = async (req, res) => {
     }
 }
 
+const reviewRequest = async (req, res) => {
+    try {
+        const leaveRequest = await LeaveRequest.findById(req.params.requestId)
+        if (!leaveRequest) {
+            return res.status(404).json({ err: "Leave request not found" })
+        }
+
+        const { role, employee } = req.user
+
+        if (HR_ROLES.includes(role)) {
+
+        } else if (role === "Manager") {
+            if (!leaveRequest.approver.equals(employee)) {
+                return res.status(403).json({ err: "Not authorized to review this request" })
+            }
+
+        } else {
+            return res.status(403).json({ err: "Not authorized to review this request" })
+        }
+
+        const { decision, reason } = req.body
+
+        if (!["Approved", "Rejected"].includes(decision)) {
+            return res.status(400).json({ err: "decision must be either Approved or Rejected" })
+        }
+
+        if (leaveRequest.status !== "Pending") {
+            return res.status(409).json({ err: "Only a Pending request can be reviewed" })
+        }
+
+        if (decision === "Rejected") {
+            leaveRequest.status = "Rejected"
+            leaveRequest.rejectionReason = reason
+            await leaveRequest.save()
+
+            await createAuditLog({
+                tableName: "LeaveRequest",
+                recordId: leaveRequest._id,
+                action: "Update",
+                changedBy: req.user._id,
+                changes: [{ fieldName: "status", oldValue: "Pending", newValue: "Rejected" }],
+                reason: reason,
+                ipAddress: req.ip,
+            })
+
+            return res.status(200).json(leaveRequest)
+        }
+
+    } catch (e) {
+        res.status(400).json({ err: e.message })
+    }
+}
+
 module.exports = {
     indexType,
     createType,
@@ -646,4 +699,5 @@ module.exports = {
     showRequest,
     createRequest,
     submitRequest,
+    reviewRequest,
 }

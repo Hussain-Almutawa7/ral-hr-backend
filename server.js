@@ -114,6 +114,7 @@ app.post("/api/leave/requests", verifyToken, requireRole("Employee", "Manager", 
 app.patch("/api/leave/requests/:requestId/submit", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), leaveCtrl.submitRequest)
 app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 app.get("/api/leave/requests/:requestId", verifyToken, leaveCtrl.showRequest)
+app.patch("/api/leave/requests/:requestId/review", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), leaveCtrl.reviewRequest)
 
 // ATTENDANCE ROUTES
 
