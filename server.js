@@ -147,6 +147,7 @@ app.get("/api/attendances", verifyToken, requireRole("HR Manager", "HR Officer")
 app.post("/api/attendances/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
 app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
 app.get("/api/attendances/team", verifyToken, requireRole("Manager"), attendanceCtrl.teamAttendance);
+app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager"), attendanceCtrl.updateOvertime);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);

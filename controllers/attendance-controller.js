@@ -5,6 +5,7 @@ const LeaveRequest = require("../models/leaveRequest");
 const Employee = require("../models/employee");
 
 const getBahrainDate = require("../utils/getBahrainDate");
+const createAuditLog = require("../utils/createAuditLog");
 
 const index = async (req, res) => {
     try {
@@ -191,9 +192,54 @@ const teamAttendance = async (req, res) => {
     }
 }
 
+const updateOvertime = async (req, res) => {
+    try {
+        const attendance = await Attendance.findById(req.params.attendanceId);
+
+        if (!attendance) return res.status(404).json({ err: "Attendance not found" });
+
+        if (typeof req.body.approved !== "boolean")
+            return res.status(400).json({ err: "approved must be true or false." });
+
+        const employee = await Employee.findById(attendance.employee);
+
+        if (!employee) return res.status(404).json({ err: "Employee not found" });
+        if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee)) return res.status(403).json({ err: "You can only approve overtime for your team." });
+        if (attendance.locked) return res.status(400).json({ err: "Locked attendance cannot be changed." });
+        if (attendance.overtimeHours <= 0) return res.status(400).json({ err: "Employee has no overtime" });
+
+        if (attendance.overtimeApproved === req.body.approved) return res.status(200).json(attendance);
+
+        const oldOverTimeApproved = attendance.overtimeApproved;
+        attendance.overtimeApproved = req.body.approved;
+        await attendance.save();
+
+        await createAuditLog({
+            tableName: "Attendance",
+            recordId: attendance._id,
+            action: req.body.approved ? "Approve" : "Reject",
+            changedBy: req.user._id,
+            changes: [{
+                fieldName: "overtimeApproved",
+                oldValue: oldOverTimeApproved,
+                newValue: attendance.overtimeApproved,
+            }],
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(attendance);
+    } catch (e) {
+        if (e.name === "ValidationError" || e.name === "CastError")
+            return res.status(400).json({ err: e.message });
+
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     index,
     generate,
     myAttendance,
     teamAttendance,
+    updateOvertime,
 }
