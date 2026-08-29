@@ -5,6 +5,21 @@ const LeaveRequest = require("../models/leaveRequest");
 
 const getBahrainDate = require("../utils/getBahrainDate");
 
+
+const myAttendance = async (req, res) => {
+    try {
+        const attendances = await Attendance.find({ employee: req.user.employee, })
+            .populate("shiftType", "shiftName startTime endTime")
+            .populate("leaveRequest")
+            .sort({ date: -1 });
+
+        res.status(200).json(attendances);
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
+
+
 const generate = async (req, res) => {
     try {
         if (req.body.date === undefined || req.body.date === null || req.body.date === "")
@@ -125,4 +140,5 @@ const generate = async (req, res) => {
 
 module.exports = {
     generate,
+    myAttendance,
 }
