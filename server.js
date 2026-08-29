@@ -143,8 +143,9 @@ app.patch("/api/holidays/:holidayId", verifyToken, requireRole("HR Manager"), ho
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
 app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
 
-app.get("/api/attendance/me", verifyToken, attendanceCtrl.myAttendance);
-app.post("/api/attendance/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
+app.get("/api/attendances", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.index);
+app.post("/api/attendances/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
+app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);

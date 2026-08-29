@@ -5,20 +5,36 @@ const LeaveRequest = require("../models/leaveRequest");
 
 const getBahrainDate = require("../utils/getBahrainDate");
 
-
-const myAttendance = async (req, res) => {
+const index = async (req, res) => {
     try {
-        const attendances = await Attendance.find({ employee: req.user.employee, })
+        const filter = {};
+
+        if (req.query.employee !== undefined) filter.employee = req.query.employee;
+
+        if (req.query.date !== undefined) {
+            if (req.query.date === "") return res.status(400).json({ err: "Invalid date provided" });
+
+            const date = new Date(req.query.date);
+
+            if (isNaN(date.getTime())) return res.status(400).json({ err: "Invalid date provided." });
+
+            date.setUTCHours(0, 0, 0, 0);
+
+            filter.date = date;
+        }
+
+        const attendances = await Attendance.find(filter)
+            .populate("employee", "employeeCode nameEn nameAr")
             .populate("shiftType", "shiftName startTime endTime")
             .populate("leaveRequest")
             .sort({ date: -1 });
 
         res.status(200).json(attendances);
+
     } catch (e) {
-        return res.status(500).json({ err: e.message });
+        res.status(500).json({ err: e.message });
     }
 }
-
 
 const generate = async (req, res) => {
     try {
@@ -138,7 +154,21 @@ const generate = async (req, res) => {
     }
 }
 
+const myAttendance = async (req, res) => {
+    try {
+        const attendances = await Attendance.find({ employee: req.user.employee, })
+            .populate("shiftType", "shiftName startTime endTime")
+            .populate("leaveRequest")
+            .sort({ date: -1 });
+
+        res.status(200).json(attendances);
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
+    index,
     generate,
     myAttendance,
 }
