@@ -34,6 +34,7 @@ const shiftAssignmentCtrl = require("./controllers/shift-assignment-controller")
 const holidayListCtrl = require("./controllers/holiday-list-controller");
 const holidayCtrl = require("./controllers/holiday-controller");
 const checkinCtrl = require("./controllers/checkin-controller");
+const attendanceCtrl = require("./controllers/attendance-controller");
 
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
@@ -138,6 +139,8 @@ app.patch("/api/holidays/:holidayId", verifyToken, requireRole("HR Manager"), ho
 
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
 app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
+
+app.post("/api/attendance/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
