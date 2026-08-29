@@ -76,6 +76,10 @@ const leaveTypeSchema = new mongoose.Schema({
         trim: true,
         default: null,
     },
+    usesProration: {
+        type: Boolean,
+        default: false,
+    },
 }, { timestamps: true });
 
 const LeaveType = mongoose.model("LeaveType", leaveTypeSchema);
