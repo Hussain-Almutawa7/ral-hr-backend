@@ -208,10 +208,34 @@ const updateOvertime = async (req, res) => {
         if (attendance.locked) return res.status(400).json({ err: "Locked attendance cannot be changed." });
         if (attendance.overtimeHours <= 0) return res.status(400).json({ err: "Employee has no overtime" });
 
-        if (attendance.overtimeApproved === req.body.approved) return res.status(200).json(attendance);
+        const newStatus = req.body.approved ? "Approved" : "Rejected";
 
-        const oldOverTimeApproved = attendance.overtimeApproved;
+        if (attendance.overtimeStatus === newStatus) return res.status(200).json(attendance);
+
+        const oldOvertimeApproved = attendance.overtimeApproved;
+        const oldOvertimeStatus = attendance.overtimeStatus;
+
         attendance.overtimeApproved = req.body.approved;
+        attendance.overtimeStatus = newStatus;
+
+        const changes = [];
+
+        if (oldOvertimeApproved !== attendance.overtimeApproved) {
+            changes.push({
+                fieldName: "overtimeApproved",
+                oldValue: oldOvertimeApproved,
+                newValue: attendance.overtimeApproved,
+            });
+        }
+
+        if (oldOvertimeStatus !== attendance.overtimeStatus) {
+            changes.push({
+                fieldName: "overtimeStatus",
+                oldValue: oldOvertimeStatus,
+                newValue: attendance.overtimeStatus,
+            });
+        }
+
         await attendance.save();
 
         await createAuditLog({
@@ -219,11 +243,7 @@ const updateOvertime = async (req, res) => {
             recordId: attendance._id,
             action: req.body.approved ? "Approve" : "Reject",
             changedBy: req.user._id,
-            changes: [{
-                fieldName: "overtimeApproved",
-                oldValue: oldOverTimeApproved,
-                newValue: attendance.overtimeApproved,
-            }],
+            changes,
             ipAddress: req.ip,
         });
 
