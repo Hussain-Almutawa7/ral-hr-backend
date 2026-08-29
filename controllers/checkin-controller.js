@@ -1,6 +1,7 @@
 const Checkin = require("../models/checkin");
 const Employee = require("../models/employee");
 const ShiftAssignemt = require("../models/shiftAssignment");
+const Attendance = require("../models/attendance");
 
 const create = async (req, res) => {
     try {
@@ -43,17 +44,36 @@ const create = async (req, res) => {
             return res.status(400).json({ err: "You are already clocked out" });
         }
 
-        const checkinData = {
-            employee: employee._id,
-            timestamp,
-            logType,
-            source: "Web",
-            attendance: null,
-        };
+        if (logType === "IN") {
+            const attendanceData = {
+                employee: employee._id,
+                date: todayStart,
+                status: "Present",
+                shiftType: shiftAssignemt.shiftType._id,
+                inTime: timestamp,
+                isIncomplete: true,
+            };
 
-        const createdCheckin = await Checkin.create(checkinData);
+            const existingAttendance = await Attendance.findOne({
+                employee: employee._id,
+                date: todayStart,
+            });
 
-        res.status(201).json(createdCheckin);
+            if (existingAttendance) return res.status(400).json({ err: "Attendance available today" });
+            const createdAttendance = await Attendance.create(attendanceData);
+
+            const checkinData = {
+                employee: employee._id,
+                timestamp,
+                logType,
+                source: "Web",
+                attendance: createdAttendance._id,
+            };
+
+            const createdCheckin = await Checkin.create(checkinData);
+
+            return res.status(201).json(createdCheckin);
+        }
 
     } catch (e) {
         if (e.name === "ValidationError" || e.name === "CastError")
