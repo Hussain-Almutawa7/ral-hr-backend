@@ -3,7 +3,6 @@ const ShiftType = require("../models/shiftType");
 const Employee = require("../models/employee");
 
 const createAuditLog = require("../utils/createAuditLog");
-const ShiftAssignment = require("../models/shiftAssignment");
 
 const index = async (req, res) => {
     try {
