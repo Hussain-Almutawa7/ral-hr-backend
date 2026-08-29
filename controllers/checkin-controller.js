@@ -5,6 +5,7 @@ const Attendance = require("../models/attendance");
 const Holiday = require("../models/holiday");
 
 const getBahrainDate = require("../utils/getBahrainDate");
+const getBahrainDateTime = require("../utils/getBahrainDateTime");
 
 const create = async (req, res) => {
     try {
@@ -117,16 +118,10 @@ const create = async (req, res) => {
             const breakHours = attendance.shiftType.breakMinutes / 60;
             const workedHours = Math.max(0, elapsedHours - breakHours);
 
-            const [startHour, startMinute] = attendance.shiftType.startTime.split(":").map(Number);
-            const [endHour, endMinute] = attendance.shiftType.endTime.split(":").map(Number);
+            const shiftStart = getBahrainDateTime(attendance.date, attendance.shiftType.startTime);
+            const shiftEnd = getBahrainDateTime(attendance.date, attendance.shiftType.endTime);
 
-            const shiftStart = new Date(attendance.date);
-            shiftStart.setHours(startHour, startMinute, 0, 0);
-
-            const shiftEnd = new Date(attendance.date);
-            shiftEnd.setHours(endHour, endMinute, 0, 0);
-
-            if (shiftEnd <= shiftStart) shiftEnd.setDate(shiftEnd.getDate() + 1);
+            if (shiftEnd <= shiftStart) shiftEnd.setUTCDate(shiftEnd.getDate() + 1);
 
             const isHoliday = attendance.status === "Holiday" || attendance.status === "Weekly Off";
 
