@@ -127,6 +127,7 @@ app.get("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole("H
 app.patch("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole("HR Officer", "HR Manager"), shiftAssignmentCtrl.update);
 
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
+app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);

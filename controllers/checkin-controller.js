@@ -2,7 +2,6 @@ const Checkin = require("../models/checkin");
 const Employee = require("../models/employee");
 const ShiftAssignemt = require("../models/shiftAssignment");
 
-
 const create = async (req, res) => {
     try {
         const employee = await Employee.findById(req.user.employee);
@@ -64,6 +63,21 @@ const create = async (req, res) => {
     }
 }
 
+const index = async (req, res) => {
+    try {
+        const checkin = await Checkin.find({
+            employee: req.user.employee,
+        }).sort({ timestamp: -1 });
+
+        if (checkin.length === 0) return res.status(404).json({ err: "Check-in not found" });
+
+        res.status(200).json(checkin);
+    } catch (e) {
+        return res.status(500).json({ err: e.message })
+    }
+}
+
 module.exports = {
     create,
+    index,
 }
