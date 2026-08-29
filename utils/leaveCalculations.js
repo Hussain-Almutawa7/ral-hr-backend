@@ -84,8 +84,24 @@ const getLeaveConsumption = async (employeeId, startingLeaveType, totalDays, fro
     return { breakdown, daysStillNeeded }
 }
 
+const isLeavePeriodLocked = (date, settings) => {
+    if (settings.payrollCalendar.reopenClosedMonth) {
+        return false
+    }
+
+    const leaveDate = new Date(date)
+    const cutoffDay = settings.payrollCalendar.cutoffDay
+
+    const cutoffDateForThisMonth = new Date(leaveDate.getFullYear(), leaveDate.getMonth(), cutoffDay)
+
+    const today = new Date()
+
+    return today > cutoffDateForThisMonth
+}
+
 module.exports = {
     calculateRemainingBalance,
     calculateLeaveDays,
     getLeaveConsumption,
+    isLeavePeriodLocked,
 }

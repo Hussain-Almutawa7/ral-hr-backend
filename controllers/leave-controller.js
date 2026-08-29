@@ -12,7 +12,7 @@ const Attendance = require("../models/attendance");
 
 const createAuditLog = require("../utils/createAuditLog");
 
-const { calculateRemainingBalance, calculateLeaveDays, getLeaveConsumption } = require("../utils/leaveCalculations")
+const { calculateRemainingBalance, calculateLeaveDays, getLeaveConsumption, isLeavePeriodLocked } = require("../utils/leaveCalculations")
 
 
 const updatableFields = [
@@ -681,6 +681,109 @@ const reviewRequest = async (req, res) => {
             })
 
             return res.status(200).json(leaveRequest)
+        }
+
+        if (decision === "Approved") {
+            const requester = await Employee.findById(leaveRequest.employee)
+            if (!requester) {
+                return res.status(404).json({ err: "Employee not found" })
+            }
+
+            const startingLeaveType = await LeaveType.findById(leaveRequest.leaveType)
+            if (!startingLeaveType) {
+                return res.status(404).json({ err: "Leave type not found" })
+            }
+
+            const totalDays = await calculateLeaveDays(
+                leaveRequest.fromDate,
+                leaveRequest.toDate,
+                requester.holidayList,
+                leaveRequest.isHalfDay,
+                leaveRequest.halfDayDate
+            )
+
+            const { breakdown, daysStillNeeded } = await getLeaveConsumption(
+                leaveRequest.employee,
+                startingLeaveType,
+                totalDays,
+                leaveRequest.fromDate
+            )
+
+            if (daysStillNeeded > 0) {
+                const maxAvailable = totalDays - daysStillNeeded
+                return res.status(400).json({
+                    err: "Insufficient balance. This request needs " + totalDays + " days but only " + maxAvailable + " are available.",
+                })
+            }
+
+            const settings = await StatutorySettings.findOne({ company: requester.company })
+            const isLocked = isLeavePeriodLocked(leaveRequest.fromDate, settings)
+
+            if (isLocked) {
+                return res.status(409).json({ err: "Payroll period is locked" })
+            }
+
+            for (let i = 0; i < breakdown.length; i++) {
+                const breakdownEntry = breakdown[i]
+
+                const allocation = await LeaveAllocation.findById(breakdownEntry.allocation)
+                if (!allocation) {
+                    return res.status(404).json({ err: "Allocation not found during approval" })
+                }
+
+                const oldDaysTaken = allocation.daysTaken
+                allocation.daysTaken = allocation.daysTaken + breakdownEntry.days
+                await allocation.save()
+
+                await createAuditLog({
+                    tableName: "LeaveAllocation",
+                    recordId: allocation._id,
+                    action: "Update",
+                    changedBy: req.user._id,
+                    changes: [{
+                        fieldName: "daysTaken",
+                        oldValue: oldDaysTaken,
+                        newValue: allocation.daysTaken,
+                    }],
+                    ipAddress: req.ip,
+                })
+            }
+
+            leaveRequest.status = "Approved"
+            leaveRequest.totalDays = totalDays
+            await leaveRequest.save()
+
+            await createAuditLog({
+                tableName: "LeaveRequest",
+                recordId: leaveRequest._id,
+                action: "Update",
+                changedBy: req.user._id,
+                changes: [{ fieldName: "status", oldValue: "Pending", newValue: "Approved" }],
+                ipAddress: req.ip,
+            })
+
+            return res.status(200).json(leaveRequest)
+        }
+
+        const currentDate = new Date(leaveRequest.fromDate)
+        const endDate = new Date(leaveRequest.toDate)
+
+        while (currentDate <= endDate) {
+            const attendanceRecord = await Attendance.findOne({
+                employee: leaveRequest.employee,
+                date: currentDate,
+            })
+
+            if (attendanceRecord && !attendanceRecord.locked) {
+                const isTheHalfDay = leaveRequest.isHalfDay && leaveRequest.halfDayDate &&
+                    currentDate.toDateString() === new Date(leaveRequest.halfDayDate).toDateString()
+
+                attendanceRecord.status = isTheHalfDay ? "Half Day" : "On Leave"
+                attendanceRecord.leaveRequest = leaveRequest._id
+                await attendanceRecord.save()
+            }
+
+            currentDate.setDate(currentDate.getDate() + 1)
         }
 
     } catch (e) {
