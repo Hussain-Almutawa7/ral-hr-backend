@@ -2,6 +2,7 @@ const Attendance = require("../models/attendance");
 const ShiftAssignment = require("../models/shiftAssignment");
 const Holiday = require("../models/holiday");
 const LeaveRequest = require("../models/leaveRequest");
+const Employee = require("../models/employee");
 
 const getBahrainDate = require("../utils/getBahrainDate");
 
@@ -167,8 +168,32 @@ const myAttendance = async (req, res) => {
     }
 }
 
+const teamAttendance = async (req, res) => {
+    try {
+        const teamMembers = await Employee.find({
+            reportsTo: req.user.employee,
+        }).select("_id");
+
+        const employeeIds = teamMembers.map(employee => employee._id);
+
+        const attendances = await Attendance.find({
+            employee: { $in: employeeIds },
+        })
+            .populate("employee", "employeeCode nameEn nameAr")
+            .populate("shiftType", "shiftName startTime endTime")
+            .populate("leaveRequest")
+            .sort({ date: -1 });
+
+        res.status(200).json(attendances);
+
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     index,
     generate,
     myAttendance,
+    teamAttendance,
 }

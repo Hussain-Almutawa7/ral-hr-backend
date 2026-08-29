@@ -146,6 +146,7 @@ app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
 app.get("/api/attendances", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.index);
 app.post("/api/attendances/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
 app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
+app.get("/api/attendances/team", verifyToken, requireRole("Manager"), attendanceCtrl.teamAttendance);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
