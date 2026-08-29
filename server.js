@@ -32,6 +32,7 @@ const leaveCtrl = require("./controllers/leave-controller")
 const shiftTypeCtrl = require("./controllers/shift-type-controller");
 const shiftAssignmentCtrl = require("./controllers/shift-assignment-controller");
 const holidayListCtrl = require("./controllers/holiday-list-controller");
+const holidayCtrl = require("./controllers/holiday-controller");
 const checkinCtrl = require("./controllers/checkin-controller");
 
 // DOCUMENTS CONTROLLERS
@@ -130,6 +131,8 @@ app.patch("/api/shift-assignments/:shiftAssignmentId", verifyToken, requireRole(
 app.get("/api/holiday-lists", verifyToken, requireRole("HR Officer", "HR Manager"), holidayListCtrl.index);
 app.post("/api/holiday-lists", verifyToken, requireRole("HR Manager"), holidayListCtrl.create);
 app.patch("/api/holiday-lists/:holidayListId", verifyToken, requireRole("HR Manager"), holidayListCtrl.update);
+
+app.get("/api/holidays", verifyToken, requireRole("HR Officer", "HR Manager"), holidayCtrl.index);
 
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
 app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
