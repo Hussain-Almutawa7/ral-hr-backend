@@ -4,6 +4,8 @@ const ShiftAssignemt = require("../models/shiftAssignment");
 const Attendance = require("../models/attendance");
 const Holiday = require("../models/holiday");
 
+const getBahrainDate = require("../utils/getBahrainDate");
+
 const create = async (req, res) => {
     try {
         const employee = await Employee.findById(req.user.employee);
@@ -29,11 +31,10 @@ const create = async (req, res) => {
         }
 
         if (logType === "IN") {
-            const todayStart = new Date(timestamp);
-            todayStart.setHours(0, 0, 0, 0);
+            const todayStart = getBahrainDate(timestamp)
 
-            const todayEnd = new Date(timestamp);
-            todayEnd.setHours(23, 59, 59, 999);
+            const todayEnd = new Date(todayStart);
+            todayEnd.setUTCHours(23, 59, 59, 999);
 
             const shiftAssignemt = await ShiftAssignemt.findOne({
                 employee: employee._id,
@@ -70,9 +71,10 @@ const create = async (req, res) => {
 
             let status = "Present";
 
-            if (isHoliday) 
+            if (isHoliday)
                 status = "Holiday";
-            else if (isWeeklyOff) status = "Weekly Off";
+            else if (isWeeklyOff)
+                status = "Weekly Off";
 
 
             const attendanceData = {
@@ -126,24 +128,37 @@ const create = async (req, res) => {
 
             if (shiftEnd <= shiftStart) shiftEnd.setDate(shiftEnd.getDate() + 1);
 
-            const lateLimit = new Date(shiftStart.getTime() + attendance.shiftType.lateGraceMinutes * 60 * 1000);
-            attendance.isLateEntry = attendance.shiftType.markLateEntry && attendance.inTime > lateLimit
+            const isHoliday = attendance.status === "Holiday" || attendance.status === "Weekly Off";
 
-            const earlyExitLimit = new Date(shiftEnd.getTime() - attendance.shiftType.earlyExitGraceMinutes * 60 * 1000);
-            attendance.isEarlyExit = attendance.shiftType.markEarlyExit && timestamp < earlyExitLimit;
+            if (isHoliday) {
+                attendance.isLateEntry = false;
+                attendance.isEarlyExit = false;
 
-            if (attendance.shiftType.allowOvertime && timestamp > shiftEnd) {
-                attendance.overtimeHours = (timestamp - shiftEnd) / (1000 * 60 * 60);
+                if (attendance.shiftType.allowOvertime) {
+                    attendance.overtimeHours = workedHours;
+                } else {
+                    attendance.overtimeHours = 0;
+                }
             } else {
-                attendance.overtimeHours = 0;
-            }
+                const lateLimit = new Date(shiftStart.getTime() + attendance.shiftType.lateGraceMinutes * 60 * 1000);
+                attendance.isLateEntry = attendance.shiftType.markLateEntry && attendance.inTime > lateLimit
 
-            if (workedHours < attendance.shiftType.absentHoursThreshold) {
-                attendance.status = "Absent";
-            } else if (workedHours < attendance.shiftType.halfDayHoursThreshold) {
-                attendance.status = "Half Day";
-            } else {
-                attendance.status = "Present";
+                const earlyExitLimit = new Date(shiftEnd.getTime() - attendance.shiftType.earlyExitGraceMinutes * 60 * 1000);
+                attendance.isEarlyExit = attendance.shiftType.markEarlyExit && timestamp < earlyExitLimit;
+
+                if (attendance.shiftType.allowOvertime && timestamp > shiftEnd) {
+                    attendance.overtimeHours = (timestamp - shiftEnd) / (1000 * 60 * 60);
+                } else {
+                    attendance.overtimeHours = 0;
+                }
+
+                if (workedHours < attendance.shiftType.absentHoursThreshold) {
+                    attendance.status = "Absent";
+                } else if (workedHours < attendance.shiftType.halfDayHoursThreshold) {
+                    attendance.status = "Half Day";
+                } else {
+                    attendance.status = "Present";
+                }
             }
 
             attendance.outTime = timestamp;
