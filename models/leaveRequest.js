@@ -58,6 +58,14 @@ const leaveRequestSchema = new mongoose.Schema({
         required: true,
         default: "Draft",
     },
+    rejectionReason: {
+        type: String,
+        trim: true,
+        default: null,
+        required: function () {
+            return this.status === "Rejected";
+        },
+    },
     balanceAtRequest: {
         type: Number,
         default: null,
