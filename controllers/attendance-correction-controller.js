@@ -260,6 +260,67 @@ const approve = async (req, res) => {
         return res.status(500).json({ err: e.message });
     }
 }
+
+const reject = async (req, res) => {
+    try {
+        const correction = await AttendanceCorrection.findById(req.params.correctionId);
+
+        if (!correction) return res.status(404).json({ err: "Correction request not found." });
+
+        if (correction.status !== "Corrected by HR") return res.status(400).json({ err: "Only corrections completed by HR can be rejected." });
+
+        const employee = await Employee.findById(correction.employee);
+
+        if (!employee) return res.status(404).json({ err: "Employee not found." });
+
+        if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee))
+            return res.status(403).json({ err: "Employee is not your direct report." });
+
+        const oldStatus = correction.status;
+        const oldRejectedBy = correction.rejectedBy;
+        const oldRejectedAt = correction.rejectedAt;
+
+        correction.status = "Rejected";
+        correction.rejectedBy = req.user._id;
+        correction.rejectedAt = new Date();
+
+        await correction.save();
+
+        await createAuditLog({
+            tableName: "AttendanceCorrection",
+            recordId: correction._id,
+            action: "Reject",
+            changedBy: req.user._id,
+            changes: [
+                {
+                    fieldName: "status",
+                    oldValue: oldStatus,
+                    newValue: correction.status,
+                },
+                {
+                    fieldName: "rejectedBy",
+                    oldValue: oldRejectedBy,
+                    newValue: correction.rejectedBy,
+                },
+                {
+                    fieldName: "rejectedAt",
+                    oldValue: oldRejectedAt,
+                    newValue: correction.rejectedAt,
+                }
+            ],
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(correction);
+
+    } catch (e) {
+        if (e.name === "ValidationError" || e.name === "CastError")
+            return res.status(400).json({ err: e.message });
+
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     create,
     correct,

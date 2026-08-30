@@ -153,6 +153,7 @@ app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("M
 app.post("/api/attendance-crrections", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.create);
 app.patch("/api/attendance-corrections", verifyToken, requireRole("HR Manager", "HR Oficcer"), attendanceCorrectionCtrl.correct);
 app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.approve);
+app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.reject);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);

@@ -56,6 +56,11 @@ const attendanceCorrectionSchema = new mongoose.Schema({
         ref: "User",
         default: null,
     },
+    rejectedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+    },
     approvedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
