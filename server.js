@@ -36,6 +36,7 @@ const holidayCtrl = require("./controllers/holiday-controller");
 const checkinCtrl = require("./controllers/checkin-controller");
 const attendanceCtrl = require("./controllers/attendance-controller");
 const attendanceCorrectionCtrl = require("./controllers/attendance-correction-controller");
+const auditLogCtrl = require("./controllers/audit-log-controller");
 
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
@@ -162,6 +163,8 @@ app.patch("/api/attendance-corrections/:correctionId/correct", verifyToken, requ
 app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.approve);
 app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.reject);
 app.get("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), attendanceCorrectionCtrl.index);
+
+app.get("/api/audit-logs", verifyToken, requireRole("HR Manager"), auditLogCtrl.index);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
