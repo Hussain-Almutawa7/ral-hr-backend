@@ -241,6 +241,20 @@ const verify = async (req, res) => {
             ipAddress: req.ip,
         });
 
+        const employeeUser = await User.findOne({ employee: empDocument.employee })
+
+        if (employeeUser) {
+            await createNotification({
+                recipient: employeeUser._id,
+                type: "document_verified",
+                title: "Document Verified",
+                message: "Your document was verified",
+                sourceType: "EmployeeDocument",
+                sourceId: empDocument._id,
+                link: "/documents/" + empDocument._id,
+            })
+        }
+
         res.status(200).json(empDocument);
 
     } catch (e) {
@@ -288,6 +302,20 @@ const reject = async (req, res) => {
             changes,
             ipAddress: req.ip,
         });
+
+        const employeeUser = await User.findOne({ employee: empDocument.employee })
+
+        if (employeeUser) {
+            await createNotification({
+                recipient: employeeUser._id,
+                type: "document_rejected",
+                title: "Document Rejected",
+                message: empDocument.rejectionReason,
+                sourceType: "EmployeeDocument",
+                sourceId: empDocument._id,
+                link: "/documents/" + empDocument._id,
+            })
+        }
 
         res.status(200).json(empDocument);
     } catch (e) {
