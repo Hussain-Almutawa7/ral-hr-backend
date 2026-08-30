@@ -123,7 +123,6 @@ const updateUser = async (req, res) => {
             if (existingEmail) return res.status(409).json({ err: "Email already taken" });
         }
 
-
         const allowedFields = [
             "email",
             "role",
@@ -152,7 +151,7 @@ const updateUser = async (req, res) => {
             }
         }
 
-        if (changes.length == 0) return res.status(200).json(user);
+        if (changes.length === 0) return res.status(200).json(user);
         await user.save();
 
         await createAuditLog({
@@ -166,9 +165,45 @@ const updateUser = async (req, res) => {
 
         res.status(200).json(user);
     } catch (e) {
-        if (e.name === "ValidationError" || e.name == "CastError")
+        if (e.name === "ValidationError" || e.name === "CastError")
             return res.status(400).json({ err: e.message });
 
+        return res.status(500).json({ err: e.message });
+    }
+}
+
+const updateStatus = async (req, res) => {
+    try {
+        const currentUser = await User.findById(req.params.userId);
+
+        if (!currentUser) return res.status(404).json({ err: "User not found" });
+
+        const isActive = req.body.isActive;
+
+        if (typeof isActive !== "boolean") return res.status(400).json({ err: "isActive must be a boolean." });
+
+        if (currentUser.isActive === isActive) return res.status(200).json(currentUser);
+
+        const changes = [{
+            fieldName: "isActive",
+            oldValue: currentUser.isActive,
+            newValue: isActive,
+        }];
+
+        currentUser.isActive = isActive;
+        await currentUser.save();
+
+        await createAuditLog({
+            tableName: "User",
+            recordId: currentUser._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(currentUser);
+    } catch (e) {
         return res.status(500).json({ err: e.message });
     }
 }
@@ -177,4 +212,5 @@ module.exports = {
     index,
     addUser,
     updateUser,
+    updateStatus,
 }
