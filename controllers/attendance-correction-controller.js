@@ -318,6 +318,7 @@ const reject = async (req, res) => {
                     newValue: correction.rejectionReason,
                 },
             ],
+            reason: correct.rejectionReason,
             ipAddress: req.ip,
         });
 
@@ -331,10 +332,44 @@ const reject = async (req, res) => {
     }
 }
 
+const index = async (req, res) => {
+    try {
+        const filter = {};
+
+        if (req.user.role === "Manager") {
+            const team = await Employee.find({
+                reportsTo: req.user.employee
+            }).select("_id");
+
+            const employeeIds = team.map(emp => emp._id);
+
+            filter.employee = {
+                $in: employeeIds
+            };
+        }
+
+        if (req.query.status !== undefined) filter.status = req.query.status;
+
+
+        const corrections = await AttendanceCorrection.find(filter)
+            .populate("employee", "employeeCode nameEn nameAr")
+            .populate("requestedBy", "email role")
+            .populate("correctedBy", "email role")
+            .populate("approvedBy", "email role")
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(corrections);
+
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     create,
     correct,
     approve,
     reject,
+    index,
 }
 

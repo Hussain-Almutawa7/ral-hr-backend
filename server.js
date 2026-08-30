@@ -154,6 +154,7 @@ app.post("/api/attendance-crrections", verifyToken, requireRole("Manager"), atte
 app.patch("/api/attendance-corrections", verifyToken, requireRole("HR Manager", "HR Oficcer"), attendanceCorrectionCtrl.correct);
 app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.approve);
 app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.reject);
+app.get("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), attendanceCorrectionCtrl.index);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
