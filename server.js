@@ -150,8 +150,8 @@ app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
 app.get("/api/attendances/team", verifyToken, requireRole("Manager"), attendanceCtrl.teamAttendance);
 app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager"), attendanceCtrl.updateOvertime);
 
-app.post("/api/attendance-crrections", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.create);
-app.patch("/api/attendance-corrections", verifyToken, requireRole("HR Manager", "HR Oficcer"), attendanceCorrectionCtrl.correct);
+app.post("/api/attendance-corrections", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.create);
+app.patch("/api/attendance-corrections/:correctionId/correct", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCorrectionCtrl.correct);
 app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.approve);
 app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.reject);
 app.get("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), attendanceCorrectionCtrl.index);

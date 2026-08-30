@@ -8,10 +8,11 @@ const createAuditLog = require("../utils/createAuditLog");
 const create = async (req, res) => {
     try {
         const attendance = await Attendance.findById(req.body.attendance);
-        const employee = await Employee.findById(attendance.employee);
 
         if (!attendance) return res.status(404).json({ err: "Attendance not found." });
         if (attendance.locked) return res.status(400).json({ err: "Locked attendance cannot be changed." });
+
+        const employee = await Employee.findById(attendance.employee);
 
         if (!employee) return res.status(404).json({ err: "Employee not found." });
         if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee))
@@ -61,15 +62,16 @@ const create = async (req, res) => {
 const correct = async (req, res) => {
     try {
         const correction = await AttendanceCorrection.findById(req.params.correctionId);
-        if (!correction) return res.status(404).json({ err: "Correction request not found" });
 
-        if (correct.status !== "Requested") return res.status(400).json({ err: "Only requested corrections is allowed" });
+        if (!correction) return res.status(404).json({ err: "Correction request not found" });
+        if (correction.status !== "Requested") return res.status(400).json({ err: "Only requested corrections is allowed" });
 
         const attendance = await Attendance.findOne({
             employee: correction.employee,
             date: correction.date,
         }).populate("shiftType");
 
+        if (!attendance) return res.status(404).json({ err: "Attendance not found" });
         if (attendance.locked) return res.status(400).json({ err: "Locked attendace cannot be changed" });
 
         const originalValues = {
@@ -318,7 +320,7 @@ const reject = async (req, res) => {
                     newValue: correction.rejectionReason,
                 },
             ],
-            reason: correct.rejectionReason,
+            reason: correction.rejectionReason,
             ipAddress: req.ip,
         });
 
@@ -350,12 +352,12 @@ const index = async (req, res) => {
 
         if (req.query.status !== undefined) filter.status = req.query.status;
 
-
         const corrections = await AttendanceCorrection.find(filter)
             .populate("employee", "employeeCode nameEn nameAr")
             .populate("requestedBy", "email role")
             .populate("correctedBy", "email role")
             .populate("approvedBy", "email role")
+            .populate("rejectedBy", "email role")
             .sort({ createdAt: -1 });
 
         res.status(200).json(corrections);
