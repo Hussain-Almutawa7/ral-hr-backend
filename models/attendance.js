@@ -59,6 +59,11 @@ const attendanceSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    overtimeStatus: {
+        type: String,
+        enum: ["Pending", "Approved", "Rejected", null],
+        default: null,
+    },
     leaveRequest: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "LeaveRequest",

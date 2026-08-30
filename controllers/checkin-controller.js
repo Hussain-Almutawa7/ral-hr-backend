@@ -160,6 +160,12 @@ const create = async (req, res) => {
             attendance.workedHours = workedHours;
             attendance.isIncomplete = false;
 
+            if (attendance.overtimeHours > 0)
+                attendance.overtimeStatus = "Pending";
+            else
+                attendance.overtimeStatus = null;
+
+
             await attendance.save();
 
             const checkinData = {

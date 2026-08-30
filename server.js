@@ -35,6 +35,7 @@ const holidayListCtrl = require("./controllers/holiday-list-controller");
 const holidayCtrl = require("./controllers/holiday-controller");
 const checkinCtrl = require("./controllers/checkin-controller");
 const attendanceCtrl = require("./controllers/attendance-controller");
+const attendanceCorrectionCtrl = require("./controllers/attendance-correction-controller");
 
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
@@ -145,7 +146,17 @@ app.patch("/api/holidays/:holidayId", verifyToken, requireRole("HR Manager"), ho
 app.post("/api/checkins", verifyToken, checkinCtrl.create);
 app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
 
-app.post("/api/attendance/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
+app.get("/api/attendances", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.index);
+app.post("/api/attendances/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
+app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
+app.get("/api/attendances/team", verifyToken, requireRole("Manager"), attendanceCtrl.teamAttendance);
+app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager"), attendanceCtrl.updateOvertime);
+
+app.post("/api/attendance-corrections", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.create);
+app.patch("/api/attendance-corrections/:correctionId/correct", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCorrectionCtrl.correct);
+app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.approve);
+app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.reject);
+app.get("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), attendanceCorrectionCtrl.index);
 
 // DOCUMENTS ROUTES
 app.post("/api/documents", verifyToken, uploadDocument.single("file"), documentCtrl.create);
