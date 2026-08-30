@@ -120,6 +120,8 @@ app.patch("/api/leave/requests/:requestId/submit", verifyToken, requireRole("Emp
 app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 app.get("/api/leave/requests/:requestId", verifyToken, leaveCtrl.showRequest)
 app.patch("/api/leave/requests/:requestId/review", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), leaveCtrl.reviewRequest)
+app.patch("/api/leave/requests/:requestId/cancel", verifyToken, leaveCtrl.cancelRequest)
+app.get("/api/leave/calendar", verifyToken, leaveCtrl.calendar)
 
 // ATTENDANCE ROUTES
 app.get("/api/shift-types", verifyToken, requireRole("HR Officer", "HR Manager"), shiftTypeCtrl.index);
