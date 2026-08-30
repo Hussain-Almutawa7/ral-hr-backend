@@ -70,7 +70,9 @@ app.use(morgan('dev'));
 
 // AUTH ROUTES
 app.post("/api/auth/sign-in", authCtrl.signIn);
-app.get("/api/users", verifyToken, userCtrl.index);
+
+// USER MANAGEMENT
+app.get("/api/users", verifyToken, requireRole("HR Manager"), userCtrl.index);
 
 // PEOPLE & SETTINGS ROUTES
 app.get("/api/departments", verifyToken, deptCtrl.index);
