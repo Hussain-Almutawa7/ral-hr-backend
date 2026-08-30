@@ -10,9 +10,15 @@ const StatutorySettings = require("../models/statutorySettings");
 
 const Attendance = require("../models/attendance");
 
+const EmployeeDocument = require("../models/employeeDocument")
+
+const User = require("../models/user")
+
 const createAuditLog = require("../utils/createAuditLog");
 
 const { calculateRemainingBalance, calculateLeaveDays, getLeaveConsumption, isLeavePeriodLocked } = require("../utils/leaveCalculations")
+
+const createNotification = require("../utils/createNotification")
 
 
 const updatableFields = [
@@ -579,10 +585,23 @@ const submitRequest = async (req, res) => {
             }
         }
 
-        if (currentLeaveType.requiresDocument && !leaveRequest.documentFileId) {
-            return res.status(400).json({
-                err: "This leave type requires a supporting document to be attached before submission.",
+        if (currentLeaveType.requiresDocument) {
+            if (!leaveRequest.documentFileId) {
+                return res.status(400).json({
+                    err: "This leave type requires a supporting document to be attached before submission.",
+                })
+            }
+
+            const document = await EmployeeDocument.findOne({
+                _id: leaveRequest.documentFileId,
+                status: "Verified",
             })
+
+            if (!document) {
+                return res.status(400).json({
+                    err: "The attached document has not been verified yet.",
+                })
+            }
         }
 
         const totalDays = await calculateLeaveDays(
@@ -631,6 +650,20 @@ const submitRequest = async (req, res) => {
             }],
             ipAddress: req.ip,
         })
+
+        const approverUser = await User.findOne({ employee: leaveRequest.approver })
+
+        if (approverUser) {
+            await createNotification({
+                recipient: approverUser._id,
+                type: "leave_submitted",
+                title: "Leave Request Submitted",
+                message: "A leave request was submitted.",
+                sourceType: "LeaveRequest",
+                sourceId: leaveRequest._id,
+                link: "/leave/requests/" + leaveRequest._id,
+            })
+        }
 
         res.status(200).json(leaveRequest)
 
@@ -687,6 +720,20 @@ const reviewRequest = async (req, res) => {
                 reason: reason,
                 ipAddress: req.ip,
             })
+
+            const employeeUser = await User.findOne({ employee: leaveRequest.employee })
+
+            if (employeeUser) {
+                await createNotification({
+                    recipient: employeeUser._id,
+                    type: "leave_rejected",
+                    title: "Leave Request Rejected",
+                    message: "Your leave request was rejected.",
+                    sourceType: "LeaveRequest",
+                    sourceId: leaveRequest._id,
+                    link: "/leave/requests/" + leaveRequest._id,
+                })
+            }
 
             return res.status(200).json(leaveRequest)
         }
@@ -774,6 +821,20 @@ const reviewRequest = async (req, res) => {
                 ipAddress: req.ip,
             })
 
+            const employeeUser = await User.findOne({ employee: leaveRequest.employee })
+
+            if (employeeUser) {
+                await createNotification({
+                    recipient: employeeUser._id,
+                    type: "leave_approved",
+                    title: "Leave Request Approved",
+                    message: "Your leave request was approved.",
+                    sourceType: "LeaveRequest",
+                    sourceId: leaveRequest._id,
+                    link: "/leave/requests/" + leaveRequest._id,
+                })
+            }
+
             return res.status(200).json(leaveRequest)
         }
 
@@ -836,9 +897,9 @@ const cancelRequest = async (req, res) => {
         }
 
         if (leaveRequest.status === "Approved") {
-            const { reason } = req.body
+            const { cancellationReason } = req.body
 
-            if (!reason) {
+            if (!cancellationReason) {
                 return res.status(400).json({ err: "A reason is required to cancel an approved leave request" })
             }
 
@@ -922,6 +983,20 @@ const cancelRequest = async (req, res) => {
                 }],
                 ipAddress: req.ip,
             })
+
+            const approverUser = await User.findOne({ employee: leaveRequest.approver })
+
+            if (approverUser) {
+                await createNotification({
+                    recipient: approverUser._id,
+                    type: "leave_cancelled",
+                    title: "Leave Request Cancelled",
+                    message: "A leave request was cancelled.",
+                    sourceType: "LeaveRequest",
+                    sourceId: leaveRequest._id,
+                    link: "/leave/requests/" + leaveRequest._id,
+                })
+            }
 
             return res.status(200).json(leaveRequest)
         }
