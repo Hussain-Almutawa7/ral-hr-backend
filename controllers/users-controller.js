@@ -2,6 +2,8 @@ const User = require("../models/user");
 const bcrypt = require("bcrypt");
 const Employee = require("../models/employee");
 
+const createAuditLog = require("../utils/createAuditLog");
+
 const index = async (req, res) => {
     try {
         const allUsers = await User.find()
@@ -55,9 +57,51 @@ const addUser = async (req, res) => {
 
         const userCreated = await User.create(userData);
 
+        const changes = [
+            {
+                fieldName: "employee",
+                oldValue: null,
+                newValue: userCreated.employee
+            },
+            {
+                fieldName: "email",
+                oldValue: null,
+                newValue: userCreated.email
+            },
+            {
+                fieldName: "role",
+                oldValue: null,
+                newValue: userCreated.role,
+            },
+            {
+                fieldName: "isActive",
+                oldValue: null,
+                newValue: userCreated.isActive,
+            },
+        ]
+
+        await createAuditLog.create({
+            tableName: "User",
+            recordId: userCreated._id,
+            action: "Create",
+            changes,
+            ipAddress: req.ip,
+        });
+
         res.status(201).json(userCreated);
     } catch (e) {
-        res.status(500).json({ err: e.message });
+        if (e.name === "ValidationError" || e.name === "CastError")
+            return res.status(400).json({ err: e.message });
+
+        return res.status(500).json({ err: e.message });
+    }
+}
+
+const updateRole = async (req, res) => {
+    try {
+
+    } catch (e) {
+        return res.status(500).json({ err: e.message });
     }
 }
 
