@@ -80,10 +80,11 @@ const addUser = async (req, res) => {
             },
         ]
 
-        await createAuditLog.create({
+        await createAuditLog({
             tableName: "User",
             recordId: userCreated._id,
             action: "Create",
+            changedBy: req.user._id,
             changes,
             ipAddress: req.ip,
         });
@@ -97,10 +98,77 @@ const addUser = async (req, res) => {
     }
 }
 
-const updateRole = async (req, res) => {
+const updateUser = async (req, res) => {
     try {
+        const user = await User.findById(req.params.userId);
 
+        if (!user) return res.status(404).json({ err: "User not found" });
+
+        if (req.body.email === undefined && req.body.role === undefined)
+            return res.status(400).json({ err: "Email or role is required" });
+
+        let email;
+
+        if (req.body.email !== undefined) {
+            if (typeof req.body.email !== "string" || req.body.email.trim() === "")
+                return res.status(400).json({ err: "Email is required" });
+
+            email = req.body.email.trim().toLowerCase();
+
+            const existingEmail = await User.findOne({
+                _id: { $ne: user._id },
+                email,
+            })
+
+            if (existingEmail) return res.status(409).json({ err: "Email already taken" });
+        }
+
+
+        const allowedFields = [
+            "email",
+            "role",
+        ];
+
+        const changes = [];
+
+        for (const field of allowedFields) {
+            if (req.body[field] === undefined) continue;
+
+            const oldValue = user[field];
+            let newValue = req.body[field];
+            if (field === "email")
+                newValue = email;
+            else if (typeof newValue === "string")
+                newValue = newValue.trim();
+
+            user[field] = newValue;
+
+            if (user.isModified(field)) {
+                changes.push({
+                    fieldName: field,
+                    oldValue,
+                    newValue: user[field],
+                });
+            }
+        }
+
+        if (changes.length == 0) return res.status(200).json(user);
+        await user.save();
+
+        await createAuditLog({
+            tableName: "User",
+            recordId: user._id,
+            action: "Update",
+            changedBy: req.user._id,
+            changes,
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json(user);
     } catch (e) {
+        if (e.name === "ValidationError" || e.name == "CastError")
+            return res.status(400).json({ err: e.message });
+
         return res.status(500).json({ err: e.message });
     }
 }
@@ -108,4 +176,5 @@ const updateRole = async (req, res) => {
 module.exports = {
     index,
     addUser,
+    updateUser,
 }

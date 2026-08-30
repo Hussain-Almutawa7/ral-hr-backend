@@ -74,6 +74,7 @@ app.post("/api/auth/sign-in", authCtrl.signIn);
 // USER MANAGEMENT
 app.get("/api/users", verifyToken, requireRole("HR Manager"), userCtrl.index);
 app.post("/api/users", verifyToken, requireRole("HR Manager"), userCtrl.addUser);
+app.patch("/api/users/:userId", verifyToken, requireRole("HR Manager"), userCtrl.updateUser);
 
 // PEOPLE & SETTINGS ROUTES
 app.get("/api/departments", verifyToken, deptCtrl.index);
