@@ -41,7 +41,7 @@ const create = async (req, res) => {
         if (req.body.documentNumber !== undefined && typeof req.body.documentNumber !== "string")
             return res.status(400).json({ err: "Document number must be text" });
 
-        const fieldId = await uploadFile(req.file);
+        const fileId = await uploadFile(req.file);
 
         const documentData = {
             employee: employee._id,
@@ -49,7 +49,7 @@ const create = async (req, res) => {
             documentNumber: req.body.documentNumber ? req.body.documentNumber.trim() : null,
             issueDate: req.body.issueDate || null,
             expiryDate: documentType.hasExpiry ? req.body.expiryDate : null,
-            fieldId,
+            fileId,
             status: "Pending",
             uploadedBy: req.user._id,
         }
