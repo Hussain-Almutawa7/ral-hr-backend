@@ -624,7 +624,11 @@ const submitRequest = async (req, res) => {
             recordId: leaveRequest._id,
             action: "Update",
             changedBy: req.user._id,
-            changes: [{ fieldName: "status", oldValue: "Draft", newValue: "Pending" }],
+            changes: [{
+                fieldName: "status",
+                oldValue: "Draft",
+                newValue: "Pending"
+            }],
             ipAddress: req.ip,
         })
 
@@ -675,7 +679,11 @@ const reviewRequest = async (req, res) => {
                 recordId: leaveRequest._id,
                 action: "Update",
                 changedBy: req.user._id,
-                changes: [{ fieldName: "status", oldValue: "Pending", newValue: "Rejected" }],
+                changes: [{
+                    fieldName: "status",
+                    oldValue: "Pending",
+                    newValue: "Rejected"
+                }],
                 reason: reason,
                 ipAddress: req.ip,
             })
@@ -758,7 +766,11 @@ const reviewRequest = async (req, res) => {
                 recordId: leaveRequest._id,
                 action: "Update",
                 changedBy: req.user._id,
-                changes: [{ fieldName: "status", oldValue: "Pending", newValue: "Approved" }],
+                changes: [{
+                    fieldName: "status",
+                    oldValue: "Pending",
+                    newValue: "Approved"
+                }],
                 ipAddress: req.ip,
             })
 
@@ -791,6 +803,178 @@ const reviewRequest = async (req, res) => {
     }
 }
 
+const cancelRequest = async (req, res) => {
+    try {
+        const leaveRequest = await LeaveRequest.findById(req.params.requestId)
+        if (!leaveRequest) {
+            return res.status(404).json({ err: "Leave request not found" })
+        }
+
+        if (!leaveRequest.employee.equals(req.user.employee)) {
+            return res.status(403).json({ err: "Not authorized to cancel this request" })
+        }
+
+        if (leaveRequest.status === "Draft" || leaveRequest.status === "Pending") {
+            const oldStatus = leaveRequest.status
+            leaveRequest.status = "Cancelled"
+            await leaveRequest.save()
+
+            await createAuditLog({
+                tableName: "LeaveRequest",
+                recordId: leaveRequest._id,
+                action: "Update",
+                changedBy: req.user._id,
+                changes: [{
+                    fieldName: "status",
+                    oldValue: oldStatus,
+                    newValue: "Cancelled"
+                }],
+                ipAddress: req.ip,
+            })
+
+            return res.status(200).json(leaveRequest)
+        }
+
+        if (leaveRequest.status === "Approved") {
+            const { reason } = req.body
+
+            if (!reason) {
+                return res.status(400).json({ err: "A reason is required to cancel an approved leave request" })
+            }
+
+            const requester = await Employee.findById(leaveRequest.employee)
+            if (!requester) {
+                return res.status(404).json({ err: "Employee not found" })
+            }
+
+            const settings = await StatutorySettings.findOne({ company: requester.company })
+            const isLocked = isLeavePeriodLocked(leaveRequest.fromDate, settings)
+
+            if (isLocked) {
+                return res.status(409).json({ err: "Payroll period is locked" })
+            }
+
+            const startingLeaveType = await LeaveType.findById(leaveRequest.leaveType)
+            if (!startingLeaveType) {
+                return res.status(404).json({ err: "Leave type not found" })
+            }
+
+            const { breakdown } = await getLeaveConsumption(
+                leaveRequest.employee,
+                startingLeaveType,
+                leaveRequest.totalDays,
+                leaveRequest.fromDate
+            )
+
+            for (let i = 0; i < breakdown.length; i++) {
+                const breakdownEntry = breakdown[i]
+
+                const allocation = await LeaveAllocation.findById(breakdownEntry.allocation)
+                if (!allocation) {
+                    return res.status(404).json({ err: "Allocation not found during cancellation" })
+                }
+
+                const oldDaysTaken = allocation.daysTaken
+                const newDaysTaken = Math.max(0, allocation.daysTaken - breakdownEntry.days)
+
+                allocation.daysTaken = newDaysTaken
+                await allocation.save()
+
+                await createAuditLog({
+                    tableName: "LeaveAllocation",
+                    recordId: allocation._id,
+                    action: "Update",
+                    changedBy: req.user._id,
+                    changes: [{
+                        fieldName: "daysTaken",
+                        oldValue: oldDaysTaken,
+                        newValue: newDaysTaken
+                    }],
+                    ipAddress: req.ip,
+                })
+            }
+
+            const linkedAttendance = await Attendance.find({
+                leaveRequest: leaveRequest._id,
+                locked: false,
+            })
+
+            for (let i = 0; i < linkedAttendance.length; i++) {
+                const attendanceRecord = linkedAttendance[i]
+
+                attendanceRecord.leaveRequest = null
+                await attendanceRecord.save()
+            }
+
+            leaveRequest.cancellationReason = cancellationReason
+            leaveRequest.status = "Cancelled"
+            await leaveRequest.save()
+
+            await createAuditLog({
+                tableName: "LeaveRequest",
+                recordId: leaveRequest._id,
+                action: "Update",
+                changedBy: req.user._id,
+                changes: [{
+                    fieldName: "status",
+                    oldValue: "Approved",
+                    newValue: "Cancelled"
+                }],
+                ipAddress: req.ip,
+            })
+
+            return res.status(200).json(leaveRequest)
+        }
+
+        return res.status(409).json({ err: "This request cannot be cancelled from its current status" })
+
+    } catch (e) {
+        res.status(400).json({ err: e.message })
+    }
+}
+
+const calendar = async (req, res) => {
+    try {
+        const { role, employee } = req.user
+
+        let leaveRequests
+
+        if (HR_ROLES.includes(role)) {
+            leaveRequests = await LeaveRequest.find({ status: "Approved" })
+                .populate("employee", "employeeCode nameEn nameAr")
+                .populate("leaveType", "leaveTypeName leaveTypeNameAr")
+
+        } else if (role === "Manager") {
+            const teamMembers = await Employee.find({ reportsTo: employee })
+            const teamMemberIds = teamMembers.map((teamMember) => teamMember._id)
+            teamMemberIds.push(employee)
+
+            leaveRequests = await LeaveRequest.find({
+                status: "Approved",
+                employee: { $in: teamMemberIds },
+            })
+                .populate("employee", "employeeCode nameEn nameAr")
+                .populate("leaveType", "leaveTypeName leaveTypeNameAr")
+
+        } else if (role === "Employee") {
+            leaveRequests = await LeaveRequest.find({
+                status: "Approved",
+                employee: employee,
+            })
+                .populate("employee", "employeeCode nameEn nameAr")
+                .populate("leaveType", "leaveTypeName leaveTypeNameAr")
+
+        } else {
+            return res.status(403).json({ err: "Not authorized to view the leave calendar" })
+        }
+
+        res.status(200).json(leaveRequests)
+
+    } catch (e) {
+        res.status(500).json({ err: e.message })
+    }
+}
+
 module.exports = {
     indexType,
     createType,
@@ -803,4 +987,6 @@ module.exports = {
     createRequest,
     submitRequest,
     reviewRequest,
+    cancelRequest,
+    calendar,
 }
