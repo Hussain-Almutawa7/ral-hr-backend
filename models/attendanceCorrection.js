@@ -82,6 +82,14 @@ const attendanceCorrectionSchema = new mongoose.Schema({
         type: Date,
         default: null,
     },
+    rejectionReason: {
+        type: String,
+        trim: true,
+        default: null,
+        required: function () {
+            return this.status === "Rejected";
+        },
+    },
 });
 
 const AttendanceCorrection = mongoose.model("AttendanceCorrection", attendanceCorrectionSchema);

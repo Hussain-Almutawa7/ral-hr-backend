@@ -276,13 +276,18 @@ const reject = async (req, res) => {
         if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee))
             return res.status(403).json({ err: "Employee is not your direct report." });
 
+        if (req.body.rejectionReason === undefined || req.body.rejectionReason === null || req.body.rejectionReason.trim() === "")
+            return res.status(400).json({ err: "Rejection reason is required." });
+
         const oldStatus = correction.status;
         const oldRejectedBy = correction.rejectedBy;
         const oldRejectedAt = correction.rejectedAt;
+        const oldRejectionReason = correction.rejectionReason;
 
         correction.status = "Rejected";
         correction.rejectedBy = req.user._id;
         correction.rejectedAt = new Date();
+        correction.rejectionReason = req.body.rejectionReason;
 
         await correction.save();
 
@@ -306,7 +311,12 @@ const reject = async (req, res) => {
                     fieldName: "rejectedAt",
                     oldValue: oldRejectedAt,
                     newValue: correction.rejectedAt,
-                }
+                },
+                {
+                    fieldName: "rejectionReason",
+                    oldValue: oldRejectionReason,
+                    newValue: correction.rejectionReason,
+                },
             ],
             ipAddress: req.ip,
         });
@@ -325,5 +335,6 @@ module.exports = {
     create,
     correct,
     approve,
+    reject,
 }
 
