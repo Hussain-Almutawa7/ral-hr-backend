@@ -41,6 +41,9 @@ const auditLogCtrl = require("./controllers/audit-log-controller");
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
 
+// NOTIFICATION CONTROLLERS
+const notificationCtrl = require("./controllers/notification-controller")
+
 // PAYROLL CONTROLLERS
 
 
@@ -177,6 +180,11 @@ app.patch("/api/documents/:documentId/reject", verifyToken, requireRole("HR Offi
 app.patch("/api/documents/:documentId/archive", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.archive);
 
 // PAYROLL ROUTES
+
+// NOTIFICATION ROUTES
+app.get("/api/notifications", verifyToken, notificationCtrl.index)
+app.patch("/api/notifications/:notificationId/read", verifyToken, notificationCtrl.read)
+app.patch("/api/notifications/read-all", verifyToken, notificationCtrl.readAll)
 
 // SYSTEM ROUTES
 
