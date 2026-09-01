@@ -43,6 +43,18 @@ const indexType = async (req, res) => {
 
 const createType = async (req, res) => {
     try {
+        const nullableFields = [
+            "leaveTypeNameAr", "requiresServiceMonths", "maxCarryForward",
+            "maxLifeTimeUses", "genderRestriction", "nextLeaveType", "lawArticle"
+        ]
+
+        for (let i = 0; i < nullableFields.length; i++) {
+            const field = nullableFields[i]
+            if (req.body[field] === "") {
+                req.body[field] = null
+            }
+        }
+
         const leaveType = await LeaveType.create(req.body)
 
         const changes = []
@@ -132,6 +144,8 @@ const indexAllocations = async (req, res) => {
 
         if (HR_ROLES.includes(role)) {
             allocations = await LeaveAllocation.find()
+                .populate("employee", "employeeCode nameEn nameAr")
+                .populate("leaveType", "leaveTypeName")
 
         } else if (role === "Manager") {
             const teamMembers = await Employee.find({ reportsTo: employee })
@@ -139,9 +153,13 @@ const indexAllocations = async (req, res) => {
             teamMemberIds.push(employee) // manager's record
 
             allocations = await LeaveAllocation.find({ employee: { $in: teamMemberIds } })
+                .populate("employee", "employeeCode nameEn nameAr")
+                .populate("leaveType", "leaveTypeName")
 
         } else if (role === "Employee") {
             allocations = await LeaveAllocation.find({ employee: employee })
+                .populate("employee", "employeeCode nameEn nameAr")
+                .populate("leaveType", "leaveTypeName")
 
         } else {
             return res.status(403).json({ err: "Not authorized to view leave allocations" })
@@ -355,17 +373,44 @@ const indexRequest = async (req, res) => {
         let leaveRequests
 
         if (HR_ROLES.includes(role)) {
-            leaveRequests = await LeaveRequest.find()
+            leaveRequests = await LeaveRequest.find({
+                $or: [
+                    { status: { $ne: "Draft" } },
+                    { employee: employee }
+                ]
+            })
+                .sort({ createdAt: -1 })
+                .populate("employee", "employeeCode nameEn nameAr reportsTo")
+                .populate("leaveType")
+                .populate("approver", "employeeCode nameEn nameAr")
 
         } else if (role === "Manager") {
             const teamMembers = await Employee.find({ reportsTo: employee })
             const teamMemberIds = teamMembers.map((teamMember) => teamMember._id)
             teamMemberIds.push(employee)
 
-            leaveRequests = await LeaveRequest.find({ employee: { $in: teamMemberIds } })
+            leaveRequests = await LeaveRequest.find({
+                $and: [
+                    { employee: { $in: teamMemberIds } },
+                    {
+                        $or: [
+                            { status: { $ne: "Draft" } },
+                            { employee: employee }
+                        ]
+                    }
+                ]
+            })
+                .sort({ createdAt: -1 })
+                .populate("employee", "employeeCode nameEn nameAr reportsTo")
+                .populate("leaveType")
+                .populate("approver", "employeeCode nameEn nameAr")
 
         } else if (role === "Employee") {
             leaveRequests = await LeaveRequest.find({ employee: employee })
+                .sort({ createdAt: -1 })
+                .populate("employee", "employeeCode nameEn nameAr reportsTo")
+                .populate("leaveType")
+                .populate("approver", "employeeCode nameEn nameAr")
 
         } else {
             return res.status(403).json({ err: "Not authorized to view leave requests" })
@@ -392,7 +437,9 @@ const showRequest = async (req, res) => {
         const { role, employee } = req.user
 
         if (HR_ROLES.includes(role)) {
-
+            if (request.status === "Draft" && !request.employee.equals(employee)) {
+                return res.status(403).json({ err: "Not authorized to view this request" })
+            }
         } else if (role === "Employee") {
             if (!request.employee.equals(employee)) {
                 return res.status(403).json({ err: "Not authorized to view this request" })
@@ -400,6 +447,10 @@ const showRequest = async (req, res) => {
         } else if (role === "Manager") {
             const isOwnRequest = request.employee.equals(employee)
             const isTeamMember = request.employee.reportsTo && request.employee.reportsTo.equals(employee)
+
+            if (request.status === "Draft" && !isOwnRequest) {
+                return res.status(403).json({ err: "Not authorized to view this request" })
+            }
 
             if (!isOwnRequest && !isTeamMember) {
                 return res.status(403).json({ err: "Not authorized to view this request" })
@@ -835,28 +886,27 @@ const reviewRequest = async (req, res) => {
                 })
             }
 
-            return res.status(200).json(leaveRequest)
-        }
+            const currentDate = new Date(leaveRequest.fromDate)
+            const endDate = new Date(leaveRequest.toDate)
 
-        const currentDate = new Date(leaveRequest.fromDate)
-        const endDate = new Date(leaveRequest.toDate)
+            while (currentDate <= endDate) {
+                const attendanceRecord = await Attendance.findOne({
+                    employee: leaveRequest.employee,
+                    date: currentDate,
+                })
 
-        while (currentDate <= endDate) {
-            const attendanceRecord = await Attendance.findOne({
-                employee: leaveRequest.employee,
-                date: currentDate,
-            })
+                if (attendanceRecord && !attendanceRecord.locked) {
+                    const isTheHalfDay = leaveRequest.isHalfDay && leaveRequest.halfDayDate &&
+                        currentDate.toDateString() === new Date(leaveRequest.halfDayDate).toDateString()
 
-            if (attendanceRecord && !attendanceRecord.locked) {
-                const isTheHalfDay = leaveRequest.isHalfDay && leaveRequest.halfDayDate &&
-                    currentDate.toDateString() === new Date(leaveRequest.halfDayDate).toDateString()
+                    attendanceRecord.status = isTheHalfDay ? "Half Day" : "On Leave"
+                    attendanceRecord.leaveRequest = leaveRequest._id
+                    await attendanceRecord.save()
+                }
 
-                attendanceRecord.status = isTheHalfDay ? "Half Day" : "On Leave"
-                attendanceRecord.leaveRequest = leaveRequest._id
-                await attendanceRecord.save()
+                currentDate.setDate(currentDate.getDate() + 1)
             }
-
-            currentDate.setDate(currentDate.getDate() + 1)
+            return res.status(200).json(leaveRequest)
         }
 
     } catch (e) {

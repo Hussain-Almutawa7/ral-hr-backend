@@ -41,6 +41,9 @@ const auditLogCtrl = require("./controllers/audit-log-controller");
 // DOCUMENTS CONTROLLERS
 const documentCtrl = require("./controllers/documents-controller");
 
+// NOTIFICATION CONTROLLERS
+const notificationCtrl = require("./controllers/notification-controller")
+
 // PAYROLL CONTROLLERS
 
 
@@ -115,8 +118,8 @@ app.patch("/api/document-types/:docTypeId/status", verifyToken, requireRole("HR 
 
 // LEAVE ROUTES
 app.get("/api/leave/types", verifyToken, leaveCtrl.indexType)
-app.post("/api/leave/types", verifyToken, requireRole("HR Manager"), leaveCtrl.createType)
-app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Manager"), leaveCtrl.updateType)
+app.post("/api/leave/types", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createType)
+app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.updateType)
 
 app.get("/api/leave/allocations", verifyToken, leaveCtrl.indexAllocations)
 app.post("/api/leave/allocations", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createAllocation)
@@ -155,13 +158,13 @@ app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
 app.get("/api/attendances", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.index);
 app.post("/api/attendances/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
 app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
-app.get("/api/attendances/team", verifyToken, requireRole("Manager"), attendanceCtrl.teamAttendance);
-app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager"), attendanceCtrl.updateOvertime);
+app.get("/api/attendances/team", verifyToken, requireRole("Manager", "HR Manager"), attendanceCtrl.teamAttendance);
+app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager", "HR Manager"), attendanceCtrl.updateOvertime);
 
-app.post("/api/attendance-corrections", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.create);
+app.post("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Manager"), attendanceCorrectionCtrl.create);
 app.patch("/api/attendance-corrections/:correctionId/correct", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCorrectionCtrl.correct);
-app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.approve);
-app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.reject);
+app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager", "HR Manager"), attendanceCorrectionCtrl.approve);
+app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager", "HR Manager"), attendanceCorrectionCtrl.reject);
 app.get("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), attendanceCorrectionCtrl.index);
 
 app.get("/api/audit-logs", verifyToken, requireRole("HR Manager"), auditLogCtrl.index);
@@ -177,6 +180,11 @@ app.patch("/api/documents/:documentId/reject", verifyToken, requireRole("HR Offi
 app.patch("/api/documents/:documentId/archive", verifyToken, requireRole("HR Officer", "HR Manager"), documentCtrl.archive);
 
 // PAYROLL ROUTES
+
+// NOTIFICATION ROUTES
+app.get("/api/notifications", verifyToken, notificationCtrl.index)
+app.patch("/api/notifications/:notificationId/read", verifyToken, notificationCtrl.read)
+app.patch("/api/notifications/read-all", verifyToken, notificationCtrl.readAll)
 
 // SYSTEM ROUTES
 
