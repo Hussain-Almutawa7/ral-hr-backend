@@ -118,8 +118,8 @@ app.patch("/api/document-types/:docTypeId/status", verifyToken, requireRole("HR 
 
 // LEAVE ROUTES
 app.get("/api/leave/types", verifyToken, leaveCtrl.indexType)
-app.post("/api/leave/types", verifyToken, requireRole("HR Manager"), leaveCtrl.createType)
-app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Manager"), leaveCtrl.updateType)
+app.post("/api/leave/types", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createType)
+app.patch("/api/leave/types/:leaveTypeId", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.updateType)
 
 app.get("/api/leave/allocations", verifyToken, leaveCtrl.indexAllocations)
 app.post("/api/leave/allocations", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createAllocation)
