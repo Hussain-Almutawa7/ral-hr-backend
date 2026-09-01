@@ -158,13 +158,13 @@ app.get("/api/checkins/me", verifyToken, checkinCtrl.index);
 app.get("/api/attendances", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.index);
 app.post("/api/attendances/generate", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCtrl.generate);
 app.get("/api/attendances/me", verifyToken, attendanceCtrl.myAttendance);
-app.get("/api/attendances/team", verifyToken, requireRole("Manager"), attendanceCtrl.teamAttendance);
-app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager"), attendanceCtrl.updateOvertime);
+app.get("/api/attendances/team", verifyToken, requireRole("Manager", "HR Manager"), attendanceCtrl.teamAttendance);
+app.patch("/api/attendances/:attendanceId/overtime", verifyToken, requireRole("Manager", "HR Manager"), attendanceCtrl.updateOvertime);
 
-app.post("/api/attendance-corrections", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.create);
+app.post("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Manager"), attendanceCorrectionCtrl.create);
 app.patch("/api/attendance-corrections/:correctionId/correct", verifyToken, requireRole("HR Manager", "HR Officer"), attendanceCorrectionCtrl.correct);
-app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.approve);
-app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager"), attendanceCorrectionCtrl.reject);
+app.patch("/api/attendance-corrections/:correctionId/approve", verifyToken, requireRole("Manager", "HR Manager"), attendanceCorrectionCtrl.approve);
+app.patch("/api/attendance-corrections/:correctionId/reject", verifyToken, requireRole("Manager", "HR Manager"), attendanceCorrectionCtrl.reject);
 app.get("/api/attendance-corrections", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), attendanceCorrectionCtrl.index);
 
 app.get("/api/audit-logs", verifyToken, requireRole("HR Manager"), auditLogCtrl.index);
