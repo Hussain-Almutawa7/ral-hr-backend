@@ -16,7 +16,7 @@ const index = async (req, res) => {
             .populate("bankName", "nameEn nameAr isActive")
             .populate("reportsTo", "employeeCode nameEn nameAr")
             .populate("holidayList", "name year weeklyOffDays")
-            .populate("shiftType", "shiftName startTime endTime");;
+            .populate("shiftType", "shiftName startTime endTime");
 
         res.status(200).json(employees);
     } catch (e) {
@@ -32,7 +32,7 @@ const show = async (req, res) => {
             .populate("bankName", "nameEn nameAr isActive")
             .populate("reportsTo", "employeeCode nameEn nameAr")
             .populate("holidayList", "name year weeklyOffDays")
-            .populate("shiftType", "shiftName startTime endTime");;
+            .populate("shiftType", "shiftName startTime endTime");
 
         if (!foundEmployee) return res.status(404).json({ err: "Employee not found" });
 
@@ -50,7 +50,7 @@ const me = async (req, res) => {
             .populate("bankName", "nameEn nameAr isActive")
             .populate("reportsTo", "employeeCode nameEn nameAr")
             .populate("holidayList", "name year weeklyOffDays")
-            .populate("shiftType", "shiftName startTime endTime");;
+            .populate("shiftType", "shiftName startTime endTime");
 
         if (!foundEmployee) return res.status(404).json({ err: "Employee not found" });
 
