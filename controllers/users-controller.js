@@ -208,9 +208,40 @@ const updateStatus = async (req, res) => {
     }
 }
 
+const resetPassword = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId);
+
+        if (!user) return res.status(404).json({ err: "User not found" });
+
+        const password = req.body.password;
+
+        if (password === undefined || typeof password !== "string" || password.trim() === "")
+            return res.status(400).json({ err: "Password is required" });
+
+        user.password = await bcrypt.hash(password, 10);
+
+        await user.save();
+
+        await createAuditLog({
+            tableName: "User",
+            recordId: user._id,
+            action: "Password Reset",
+            changedBy: req.user._id,
+            changes: [],
+            ipAddress: req.ip,
+        });
+
+        res.status(200).json({ message: "Password reset successfully." });
+    } catch (e) {
+        res.status(500).json({ err: e.message });
+    }
+}
+
 module.exports = {
     index,
     addUser,
     updateUser,
     updateStatus,
+    resetPassword,
 }

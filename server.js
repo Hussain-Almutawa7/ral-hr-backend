@@ -80,6 +80,7 @@ app.get("/api/users", verifyToken, requireRole("HR Manager"), userCtrl.index);
 app.post("/api/users", verifyToken, requireRole("HR Manager"), userCtrl.addUser);
 app.patch("/api/users/:userId", verifyToken, requireRole("HR Manager"), userCtrl.updateUser);
 app.patch("/api/users/:userId/status", verifyToken, requireRole("HR Manager"), userCtrl.updateStatus);
+app.patch( "/api/users/:userId/password", verifyToken, requireRole("HR Manager"), userCtrl.resetPassword);
 
 // PEOPLE & SETTINGS ROUTES
 app.get("/api/departments", verifyToken, deptCtrl.index);
