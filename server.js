@@ -22,6 +22,7 @@ const bankCtrl = require("./controllers/bank-controller");
 const settingsCtrl = require("./controllers/settings-controller");
 const employeeCtrl = require("./controllers/employee-controller");
 const docTypeCtrl = require("./controllers/document-type-controller");
+const dashboardCtrl = require("./controllers/dashboard-controller");
 
 // LEAVE CONTROLLERS
 const leaveCtrl = require("./controllers/leave-controller");
@@ -60,9 +61,11 @@ app.get("/api/users", verifyToken, requireRole("HR Manager"), userCtrl.index);
 app.post("/api/users", verifyToken, requireRole("HR Manager"), userCtrl.addUser);
 app.patch("/api/users/:userId", verifyToken, requireRole("HR Manager"), userCtrl.updateUser);
 app.patch("/api/users/:userId/status", verifyToken, requireRole("HR Manager"), userCtrl.updateStatus);
-app.patch( "/api/users/:userId/password", verifyToken, requireRole("HR Manager"), userCtrl.resetPassword);
+app.patch("/api/users/:userId/password", verifyToken, requireRole("HR Manager"), userCtrl.resetPassword);
 
 // PEOPLE & SETTINGS ROUTES
+app.get("/api/dashboard", verifyToken, dashboardCtrl.index);
+
 app.get("/api/departments", verifyToken, deptCtrl.index);
 app.post("/api/departments", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.create);
 app.patch("/api/departments/:departmentId", verifyToken, requireRole("HR Officer", "HR Manager"), deptCtrl.update);
@@ -106,7 +109,7 @@ app.get("/api/leave/allocations", verifyToken, leaveCtrl.indexAllocations);
 app.post("/api/leave/allocations", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createAllocation);
 app.patch("/api/leave/allocations/:allocationId", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.updateAllocation);
 
-app.post("/api/leave/requests", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), uploadDocument.single("document"),  leaveCtrl.createRequest);
+app.post("/api/leave/requests", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), uploadDocument.single("document"), leaveCtrl.createRequest);
 app.patch("/api/leave/requests/:requestId/submit", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), leaveCtrl.submitRequest);
 app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest);
 app.get("/api/leave/requests/:requestId", verifyToken, leaveCtrl.showRequest);
