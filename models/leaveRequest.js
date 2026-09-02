@@ -26,6 +26,9 @@ const leaveRequestSchema = new mongoose.Schema({
     halfDayDate: {
         type: Date,
         default: null,
+        required: function () {
+            return this.isHalfDay === true
+        },
     },
     totalDays: {
         type: Number,

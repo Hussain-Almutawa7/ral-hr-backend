@@ -126,13 +126,14 @@ app.get("/api/leave/allocations", verifyToken, leaveCtrl.indexAllocations)
 app.post("/api/leave/allocations", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.createAllocation)
 app.patch("/api/leave/allocations/:allocationId", verifyToken, requireRole("HR Officer", "HR Manager"), leaveCtrl.updateAllocation)
 
-app.post("/api/leave/requests", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), leaveCtrl.createRequest)
+app.post("/api/leave/requests", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), uploadDocument.single("document"),  leaveCtrl.createRequest)
 app.patch("/api/leave/requests/:requestId/submit", verifyToken, requireRole("Employee", "Manager", "HR Officer", "HR Manager"), leaveCtrl.submitRequest)
 app.get("/api/leave/requests", verifyToken, leaveCtrl.indexRequest)
 app.get("/api/leave/requests/:requestId", verifyToken, leaveCtrl.showRequest)
 app.patch("/api/leave/requests/:requestId/review", verifyToken, requireRole("Manager", "HR Officer", "HR Manager"), leaveCtrl.reviewRequest)
 app.patch("/api/leave/requests/:requestId/cancel", verifyToken, leaveCtrl.cancelRequest)
 app.get("/api/leave/calendar", verifyToken, leaveCtrl.calendar)
+app.get("/api/leave/requests/:requestId/document", verifyToken, leaveCtrl.downloadRequestDocument)
 
 // ATTENDANCE ROUTES
 app.get("/api/shift-types", verifyToken, requireRole("HR Officer", "HR Manager"), shiftTypeCtrl.index);
