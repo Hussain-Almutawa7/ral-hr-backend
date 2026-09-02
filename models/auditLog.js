@@ -20,6 +20,7 @@ const auditLogSchema = new mongoose.Schema({
             "Cancel",
             "Correct",
             "Reject",
+            "Password Reset",
         ],
         required: true,
     },
