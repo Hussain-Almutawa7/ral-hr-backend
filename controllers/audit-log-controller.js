@@ -9,7 +9,7 @@ const index = async (req, res) => {
 
         const auditLogs = await AuditLog.find(filter)
             .populate("changedBy", "email role")
-            .sort({ createdAt: -1 });
+            .sort({ changedAt: -1 });
 
         res.status(200).json(auditLogs);
 
