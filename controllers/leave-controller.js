@@ -18,7 +18,9 @@ const createAuditLog = require("../utils/createAuditLog");
 
 const { calculateRemainingBalance, calculateLeaveDays, getLeaveConsumption, isLeavePeriodLocked } = require("../utils/leaveCalculations")
 
-const createNotification = require("../utils/createNotification")
+const createNotification = require("../utils/createNotification");
+const uploadDocument  = require("../middleware/upload-document");
+const { uploadFile, getBucket } = require("../utils/gridfs");
 
 
 const updatableFields = [
@@ -466,6 +468,28 @@ const showRequest = async (req, res) => {
     }
 }
 
+const downloadRequestDocument = async (req, res) => {
+    try {
+        const request = await LeaveRequest.findById(req.params.requestId)
+        if (!request || !request.documentFileId) {
+            return res.status(404).json({ err: "Document not found" })
+        }
+
+        const bucket = getBucket()
+        const files = await bucket.find({ _id: request.documentFileId }).toArray()
+        if (!files.length) {
+            return res.status(404).json({ err: "Document not found" })
+        }
+
+        res.set("Content-Type", files[0].metadata?.contentType || "application/octet-stream")
+        res.set("Content-Disposition", `attachment; filename="${files[0].filename}"`)
+
+        bucket.openDownloadStream(request.documentFileId).pipe(res)
+    } catch (e) {
+        res.status(400).json({ err: e.message })
+    }
+}
+
 const createRequest = async (req, res) => {
     try {
         const { employee: requesterId } = req.user
@@ -479,7 +503,8 @@ const createRequest = async (req, res) => {
             return res.status(400).json({ err: "Employee has no manager assigned to approve leave" })
         }
 
-        const { leaveType, fromDate, toDate, isHalfDay, halfDayDate, reason, documentFileId } = req.body
+        const { leaveType, fromDate, toDate, halfDayDate, reason } = req.body
+        const isHalfDay = req.body.isHalfDay === "true"
 
         const currentLeaveType = await LeaveType.findById(leaveType)
         if (!currentLeaveType) {
@@ -487,11 +512,20 @@ const createRequest = async (req, res) => {
         }
 
         if (!fromDate || !toDate) {
-            return res.status(400).json({ err: "fromDate and toDate are required" })
+            return res.status(400).json({ err: "From Date and To Date are required" })
         }
 
         if (new Date(fromDate) > new Date(toDate)) {
-            return res.status(400).json({ err: "fromDate must be before or equal to toDate" })
+            return res.status(400).json({ err: "From Date must be before or equal to To Date" })
+        }
+
+        if (isHalfDay && !halfDayDate) {
+            return res.status(400).json({ err: "Please provide a date for the half-day leave." })
+        }
+
+        let documentFileId = null
+        if (req.file) {
+            documentFileId = await uploadFile(req.file)
         }
 
         const totalDays = await calculateLeaveDays(fromDate, toDate, requester.holidayList, isHalfDay, halfDayDate)
@@ -511,7 +545,7 @@ const createRequest = async (req, res) => {
         })
 
         const requestFields = [
-            "employee", "leaveType", "fromDate", "toDate", "isHalfDay", "halfDayDate", "totalDays", "reason"
+            "employee", "leaveType", "fromDate", "toDate", "isHalfDay", "halfDayDate", "totalDays", "reason", "documentFileId"
         ]
 
         const changes = []
@@ -519,7 +553,7 @@ const createRequest = async (req, res) => {
         for (let i = 0; i < requestFields.length; i++) {
             const field = requestFields[i]
 
-            if (newRequest[field] !== null && newRequest[field] !== undefined) {
+            if (newRequest[field] !== null && newRequest[field] !== undefined && newRequest[field] !== '') {
                 changes.push({
                     fieldName: field,
                     oldValue: null,
@@ -642,17 +676,6 @@ const submitRequest = async (req, res) => {
                     err: "This leave type requires a supporting document to be attached before submission.",
                 })
             }
-
-            const document = await EmployeeDocument.findOne({
-                _id: leaveRequest.documentFileId,
-                status: "Verified",
-            })
-
-            if (!document) {
-                return res.status(400).json({
-                    err: "The attached document has not been verified yet.",
-                })
-            }
         }
 
         const totalDays = await calculateLeaveDays(
@@ -712,7 +735,7 @@ const submitRequest = async (req, res) => {
                 message: "A leave request was submitted.",
                 sourceType: "LeaveRequest",
                 sourceId: leaveRequest._id,
-                link: "/leave/requests/" + leaveRequest._id,
+                link: "/leave/" + leaveRequest._id,
             })
         }
 
@@ -782,7 +805,7 @@ const reviewRequest = async (req, res) => {
                     message: "Your leave request was rejected.",
                     sourceType: "LeaveRequest",
                     sourceId: leaveRequest._id,
-                    link: "/leave/requests/" + leaveRequest._id,
+                    link: "/leave/" + leaveRequest._id,
                 })
             }
 
@@ -882,7 +905,7 @@ const reviewRequest = async (req, res) => {
                     message: "Your leave request was approved.",
                     sourceType: "LeaveRequest",
                     sourceId: leaveRequest._id,
-                    link: "/leave/requests/" + leaveRequest._id,
+                    link: "/leave/" + leaveRequest._id,
                 })
             }
 
@@ -1044,7 +1067,7 @@ const cancelRequest = async (req, res) => {
                     message: "A leave request was cancelled.",
                     sourceType: "LeaveRequest",
                     sourceId: leaveRequest._id,
-                    link: "/leave/requests/" + leaveRequest._id,
+                    link: "/leave/" + leaveRequest._id,
                 })
             }
 
@@ -1109,6 +1132,7 @@ module.exports = {
     updateAllocation,
     indexRequest,
     showRequest,
+    downloadRequestDocument,
     createRequest,
     submitRequest,
     reviewRequest,
