@@ -7,7 +7,8 @@ const createAuditLog = require("../utils/createAuditLog");
 
 const create = async (req, res) => {
     try {
-        const attendance = await Attendance.findById(req.body.attendance);
+        const attendance = await Attendance.findById(req.body.attendance)
+            .populate("shiftType", "startTime endTime");
 
         if (!attendance) return res.status(404).json({ err: "Attendance not found." });
         if (attendance.locked) return res.status(400).json({ err: "Locked attendance cannot be changed." });
@@ -29,21 +30,44 @@ const create = async (req, res) => {
         const hasRequestedChange = correctionFields.some(field => req.body[field] !== undefined);
         if (!hasRequestedChange) return res.status(400).json({ err: "At least one correction value must be provided." });
 
+        let requestedInTime = null;
+        let requestedOutTime = null;
+
+        if (req.body.requestedInTime) requestedInTime = getBahrainDateTime(attendance.date, req.body.requestedInTime);
+        if (req.body.requestedOutTime) requestedOutTime = getBahrainDateTime(attendance.date, req.body.requestedOutTime);
+
+        if (requestedInTime && isNaN(requestedInTime.getTime())) return res.status(400).json({ err: "Invalid requested clock in time." });
+        if (requestedOutTime && isNaN(requestedOutTime.getTime())) return res.status(400).json({ err: "Invalid requested clock out time." });
+        if (requestedInTime && requestedOutTime && requestedOutTime <= requestedInTime) return res.status(400).json({ err: "Requested clock out time must be after clock in." });
+
+        const effectiveInTime = requestedInTime || attendance.inTime;
+        let effectiveOutTime = requestedOutTime || attendance.outTime;
+
+        const isOvernightShift = attendance.shiftType && attendance.shiftType.endTime <= attendance.shiftType.startTime;
+
+        if (isOvernightShift && requestedOutTime && effectiveInTime && requestedOutTime <= effectiveInTime) {
+            requestedOutTime.setUTCDate(requestedOutTime.getUTCDate() + 1);
+            effectiveOutTime = requestedOutTime;
+        }
+
+        if (effectiveInTime && effectiveOutTime && effectiveOutTime <= effectiveInTime)
+            return res.status(400).json({ err: "Requested clock out time must be after clock in." });
+
         const existingAttendanceCorrection = await AttendanceCorrection.findOne({
             employee: attendance.employee,
             date: attendance.date,
-            status: "Requested",
+            status: { $in: ["Requested", "Corrected by HR"] },
         });
 
-        if (existingAttendanceCorrection) return res.status(409).json({ err: "A correction request already exists for this attendace" });
+        if (existingAttendanceCorrection) return res.status(409).json({ err: "An open correction request already exists for this attendance." });
 
         const correctionData = {
             employee: attendance.employee,
             date: attendance.date,
             requestedBy: req.user._id,
             reason: req.body.reason,
-            requestedInTime: req.body.requestedInTime,
-            requestedOutTime: req.body.requestedOutTime,
+            requestedInTime,
+            requestedOutTime,
             requestedStatus: req.body.requestedStatus,
         };
 

@@ -3,6 +3,7 @@ const ShiftAssignment = require("../models/shiftAssignment");
 const Holiday = require("../models/holiday");
 const LeaveRequest = require("../models/leaveRequest");
 const Employee = require("../models/employee");
+const AttendanceCorrection = require("../models/attendanceCorrection");
 
 const getBahrainDate = require("../utils/getBahrainDate");
 const createAuditLog = require("../utils/createAuditLog");
@@ -185,7 +186,22 @@ const teamAttendance = async (req, res) => {
             .populate("leaveRequest")
             .sort({ date: -1 });
 
-        res.status(200).json(attendances);
+        const attendanceData = await Promise.all(
+            attendances.map(async attendance => {
+                const openCorrection = await AttendanceCorrection.findOne({
+                    employee: attendance.employee._id,
+                    date: attendance.date,
+                    status: { $in: ["Requested", "Corrected by HR"] },
+                });
+
+                return {
+                    ...attendance.toObject(),
+                    hasOpenCorrection: Boolean(openCorrection),
+                };
+            })
+        );
+
+        res.status(200).json(attendanceData);
 
     } catch (e) {
         return res.status(500).json({ err: e.message });
@@ -207,6 +223,14 @@ const updateOvertime = async (req, res) => {
         if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee)) return res.status(403).json({ err: "You can only approve overtime for your team." });
         if (attendance.locked) return res.status(400).json({ err: "Locked attendance cannot be changed." });
         if (attendance.overtimeHours <= 0) return res.status(400).json({ err: "Employee has no overtime" });
+
+        const openCorrection = await AttendanceCorrection.findOne({
+            employee: attendance.employee,
+            date: attendance.date,
+            status: { $in: ["Requested", "Corrected by HR"] },
+        });
+
+        if (openCorrection) return res.status(400).json({ err: "Attendance correction must be completed before overtime can be reviewed." });
 
         const newStatus = req.body.approved ? "Approved" : "Rejected";
 
