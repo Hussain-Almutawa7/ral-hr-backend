@@ -19,7 +19,8 @@ const create = async (req, res) => {
         if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee))
             return res.status(403).json({ err: "Employee is not your direct report." });
 
-        if (req.body.reason === undefined) return res.status(400).json({ err: "Reason must be applied" });
+        if (req.body.reason === undefined || req.body.reason === null || req.body.reason.trim() === "")
+            return res.status(400).json({ err: "Reason must be applied" });
 
         const correctionFields = [
             "requestedInTime",
@@ -38,7 +39,6 @@ const create = async (req, res) => {
 
         if (requestedInTime && isNaN(requestedInTime.getTime())) return res.status(400).json({ err: "Invalid requested clock in time." });
         if (requestedOutTime && isNaN(requestedOutTime.getTime())) return res.status(400).json({ err: "Invalid requested clock out time." });
-        if (requestedInTime && requestedOutTime && requestedOutTime <= requestedInTime) return res.status(400).json({ err: "Requested clock out time must be after clock in." });
 
         const effectiveInTime = requestedInTime || attendance.inTime;
         let effectiveOutTime = requestedOutTime || attendance.outTime;
@@ -93,10 +93,79 @@ const correct = async (req, res) => {
         const attendance = await Attendance.findOne({
             employee: correction.employee,
             date: correction.date,
-        }).populate("shiftType");
+        });
 
         if (!attendance) return res.status(404).json({ err: "Attendance not found" });
         if (attendance.locked) return res.status(400).json({ err: "Locked attendace cannot be changed" });
+
+        const oldStatus = correction.status;
+        const oldCorrectedBy = correction.correctedBy;
+        const oldCorrectedAt = correction.correctedAt;
+
+        correction.status = "Corrected by HR";
+        correction.correctedBy = req.user._id;
+        correction.correctedAt = new Date();
+
+        await correction.save();
+
+        await createAuditLog({
+            tableName: "AttendanceCorrection",
+            recordId: correction._id,
+            action: "Correct",
+            changedBy: req.user._id,
+            changes: [
+                {
+                    fieldName: "status",
+                    oldValue: oldStatus,
+                    newValue: correction.status,
+                },
+                {
+                    fieldName: "correctedBy",
+                    oldValue: oldCorrectedBy,
+                    newValue: correction.correctedBy,
+                },
+                {
+                    fieldName: "correctedAt",
+                    oldValue: oldCorrectedAt,
+                    newValue: correction.correctedAt,
+                },
+            ],
+            reason: correction.reason,
+            ipAddress: req.ip,
+        });
+
+        return res.status(200).json(correction);
+    } catch (e) {
+        if (e.name === "ValidationError" || e.name === "CastError")
+            return res.status(400).json({ err: e.message });
+
+        return res.status(500).json({ err: e.message });
+    }
+}
+
+const approve = async (req, res) => {
+    try {
+        const correction = await AttendanceCorrection.findById(req.params.correctionId);
+
+        if (!correction) return res.status(404).json({ err: "Correction request not found." });
+
+        if (correction.status !== "Corrected by HR") return res.status(400).json({ err: "Only corrections completed by HR can be approved." });
+
+        const employee = await Employee.findById(correction.employee);
+
+        if (!employee) return res.status(404).json({ err: "Employee not found." });
+
+        if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee))
+            return res.status(403).json({ err: "Employee is not your direct report." });
+
+        const attendance = await Attendance.findOne({
+            employee: correction.employee,
+            date: correction.date,
+        }).populate("shiftType");
+
+        if (!attendance) return res.status(404).json({ err: "Attendance not found." });
+        if (attendance.locked) return res.status(400).json({ err: "Locked attendance cannot be changed." });
+        if (!attendance.shiftType) return res.status(400).json({ err: "Attendance has no shift type assigned." });
 
         const originalValues = {
             inTime: attendance.inTime,
@@ -185,7 +254,7 @@ const correct = async (req, res) => {
         }
 
         attendance.isCorrected = true;
-        attendance.correctedBy = req.user._id;
+        attendance.correctedBy = correction.correctedBy;
         attendance.correctionReason = correction.reason;
 
         const changes = [];
@@ -202,9 +271,13 @@ const correct = async (req, res) => {
 
         await attendance.save();
 
-        correction.status = "Corrected by HR";
-        correction.correctedBy = req.user._id;
-        correction.correctedAt = new Date();
+        const oldStatus = correction.status;
+        const oldApprovedBy = correction.approvedBy;
+        const oldApprovedAt = correction.approvedAt;
+
+        correction.status = "Approved";
+        correction.approvedBy = req.user._id;
+        correction.approvedAt = new Date();
 
         await correction.save();
 
@@ -218,39 +291,6 @@ const correct = async (req, res) => {
             ipAddress: req.ip,
         });
 
-        return res.status(200).json({ attendance, correction, });
-    } catch (e) {
-        if (e.name === "ValidationError" || e.name === "CastError")
-            return res.status(400).json({ err: e.message });
-
-        return res.status(500).json({ err: e.message });
-    }
-}
-
-const approve = async (req, res) => {
-    try {
-        const correction = await AttendanceCorrection.findById(req.params.correctionId);
-
-        if (!correction) return res.status(404).json({ err: "Correction request not found." });
-
-        if (correction.status !== "Corrected by HR") return res.status(400).json({ err: "Only corrections completed by HR can be approved." });
-
-        const employee = await Employee.findById(correction.employee);
-
-        if (!employee) return res.status(404).json({ err: "Employee not found." });
-
-        if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee))
-            return res.status(403).json({ err: "Employee is not your direct report." });
-
-        const oldStatus = correction.status;
-        const oldApprovedBy = correction.approvedBy;
-        const oldApprovedAt = correction.approvedAt;
-
-        correction.status = "Approved";
-        correction.approvedBy = req.user._id;
-        correction.approvedAt = new Date();
-
-        await correction.save();
 
         await createAuditLog({
             tableName: "AttendanceCorrection",
@@ -277,7 +317,7 @@ const approve = async (req, res) => {
             ipAddress: req.ip,
         });
 
-        res.status(200).json(correction);
+        res.status(200).json({ attendance, correction });
 
     } catch (e) {
         if (e.name === "ValidationError" || e.name === "CastError")

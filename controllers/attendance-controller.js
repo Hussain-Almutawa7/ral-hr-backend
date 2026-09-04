@@ -223,6 +223,7 @@ const updateOvertime = async (req, res) => {
         if (!employee.reportsTo || !employee.reportsTo.equals(req.user.employee)) return res.status(403).json({ err: "You can only approve overtime for your team." });
         if (attendance.locked) return res.status(400).json({ err: "Locked attendance cannot be changed." });
         if (attendance.overtimeHours <= 0) return res.status(400).json({ err: "Employee has no overtime" });
+        if (attendance.overtimeStatus !== "Pending") return res.status(400).json({ err: "Only pending overtime can be reviewed." });
 
         const openCorrection = await AttendanceCorrection.findOne({
             employee: attendance.employee,
